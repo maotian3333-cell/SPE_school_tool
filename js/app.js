@@ -296,7 +296,20 @@ function loadSample(){
 
 /* ---------- 取資料 ---------- */
 function active(){return Object.values(S.schedules).filter(s=>s.year===String(S.settings.year)&&s.sem===String(S.settings.sem));}
-function teachers(){return active().filter(s=>s.kind==='teacher').sort((a,b)=>a.label.localeCompare(b.label,'zh-Hant'));}
+/* 沒有匯入教師課表的老師，可由已匯入的班級課表推算（只含已匯入的班級，可能不完整） */
+function derivedTeachers(){
+  const have=new Set(Object.values(S.schedules).filter(s=>s.kind==='teacher'&&s.year===String(S.settings.year)&&s.sem===String(S.settings.sem)).map(s=>s.name));
+  const map={};
+  classes().forEach(c=>{for(const d in c.cells)for(const p in c.cells[d]){const x=c.cells[d][p],n=(x.teacher||'').trim();if(!n||have.has(n))continue;
+    const t=map[n]||(map[n]={key:'derived|'+S.settings.year+'|'+S.settings.sem+'|'+n,kind:'teacher',derived:true,year:String(S.settings.year),sem:String(S.settings.sem),id:n,code:'',name:n,label:n+'（由班級課表推算）',cells:{},times:{}});
+    if(!t.cells[d])t.cells[d]={};if(!t.cells[d][p])t.cells[d][p]={subject:x.subject,cls:c.id,place:x.place||''};}});
+  return map;}
+function teachers(){
+  const real=active().filter(s=>s.kind==='teacher').sort((a,b)=>a.label.localeCompare(b.label,'zh-Hant'));
+  const der=Object.values(derivedTeachers()).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+  return real.concat(der);}
+function getSched(key){if(S.schedules[key])return S.schedules[key];
+  const k=String(key);return k.indexOf('derived|')===0?(derivedTeachers()[k.split('|')[3]]||null):null;}
 function classes(){return active().filter(s=>s.kind==='class').sort((a,b)=>a.id.localeCompare(b.id));}
 function getClass(id){return classes().find(c=>c.id===id)||null;}
 function timeOf(p){for(const s of active())if(s.times&&s.times[p])return s.times[p];return TIMES[p]||null;}
@@ -316,8 +329,8 @@ function fixSelections(){
   if(!active().length){const all=Object.values(S.schedules);
     if(all.length){const m=all.slice().sort((a,b)=>(b.year+'-'+b.sem).localeCompare(a.year+'-'+a.sem))[0];S.settings.year=m.year;S.settings.sem=m.sem;}}
   const t=teachers();
-  if(!t.find(x=>x.key===S.me))S.me=t[0]?t[0].key:'';
-  if(!t.find(x=>x.key===S.target)||S.target===S.me)S.target=(t.find(x=>x.key!==S.me)||{}).key||'';
+  if(!t.find(x=>x.key===S.me))S.me=((t.find(x=>!x.derived)||t[0])||{}).key||'';
+  if(!t.find(x=>x.key===S.target)||S.target===S.me)S.target=(t.find(x=>x.key!==S.me&&!x.derived)||{}).key||'';
   if(!S.roster.find(s=>s.id===S.pv))S.pv=S.roster[0]?S.roster[0].id:'';}
 
 /* ---------- 導師對照 ---------- */
@@ -327,12 +340,12 @@ function renderOverlay(){
   const meSel=$('#meSel'),tSel=$('#tSel'),cSel=$('#clsSel');
   const opt=(v,l,sel)=>'<option value="'+esc(v)+'"'+(sel?' selected':'')+'>'+esc(l)+'</option>';
   meSel.innerHTML=t.map(x=>opt(x.key,x.label,x.key===S.me)).join('')||'<option>（尚未匯入教師課表）</option>';
-  tSel.innerHTML=t.map(x=>opt(x.key,x.label,x.key===S.target)).join('')||'<option>（尚未匯入教師課表）</option>';
+  tSel.innerHTML=(S.target?'':'<option value="" selected>（請選擇導師）</option>')+t.filter(x=>x.key!==S.me).map(x=>opt(x.key,x.label,x.key===S.target)).join('');
   const cls=[...new Set(S.roster.map(s=>s.cls).concat(classes().map(c=>c.id)))].sort();
   cSel.innerHTML='<option value="">（選擇班級）</option>'+cls.map(c=>{const n=homeroomOf(c);return opt(c,c+(n?'　'+n:''),false);}).join('');
-  const A=S.schedules[S.me],B=S.schedules[S.target];
+  const A=getSched(S.me),B=getSched(S.target);
   const grid=$('#ovGrid'),side=$('#ovSide');
-  if(!A||!B){grid.innerHTML=emptyHTML('匯入至少兩位老師的課表（你自己和導師），這裡就會出現重疊圖。','clock');side.innerHTML='';renderSurvey();return;}
+  if(!A||!B){grid.innerHTML=emptyHTML(t.filter(x=>!x.derived).length<2?'目前只匯入了 1 位老師的課表。請再貼上導師的教師課表（或匯入導師任教班級的班級課表，系統會自動推算），再從「對照對象（導師）」選擇。':'請在「對照對象（導師）」或「用班級找導師」選一位老師。','clock');side.innerHTML='';renderSurvey();return;}
   const days=dayList(),pers=periodList();
   const common=[];
   pers.forEach(p=>days.forEach(d=>{if(slotExists(d,p)&&!(A.cells[d]||{})[p]&&!(B.cells[d]||{})[p])common.push({d:d,p:p});}));
@@ -376,6 +389,7 @@ function renderOverlay(){
   sd+=lines.length?'<ul>'+lines.map(l=>'<li>'+esc(l.txt)+'</li>').join('')+'</ul><button class="btn sm" id="btnCopy" type="button" style="margin-bottom:14px">複製時段清單</button>':'<p class="empty" style="padding:0 0 12px">兩人沒有重疊的空堂。</p>';
   sd+='<h2>下課就能碰面</h2>';
   sd+=meet.length?'<ul>'+meet.map(m=>'<li>星期'+DAYN[m.d]+' '+pName(m.p)+'下課（'+esc(m.end)+'）<small>到 '+esc(m.room)+' 教室外等，下一節兩人都有空</small></li>').join('')+'</ul>':'<p class="empty" style="padding:0">目前沒有「我有空、導師剛下課、下節也有空」的組合。</p>';
+  if(A.derived||B.derived)sd='<p class="hint" style="margin:0 0 10px">※ '+esc((A.derived?A:B).name)+' 的課表是由已匯入的班級課表推算，只包含你已匯入的班級，可能不完整。若有該老師自己的教師課表，貼上後會自動改用。</p>'+sd;
   side.innerHTML=sd;
   const cb=$('#btnCopy');if(cb)cb.onclick=()=>copyText(lines.map(l=>l.txt).join('\n'),cb);
   renderSurvey();}
@@ -512,7 +526,7 @@ function pickOpts(){
       return Object.assign(o,{s:fm(st),e:fm(en),over:en>toMin(t[1])});}).filter(Boolean);}
 function dateOf(d){if(!S.sv.week)return '';const dt=new Date(S.sv.week+'T00:00:00');if(isNaN(dt.getTime()))return '';dt.setDate(dt.getDate()+d-1);return (dt.getMonth()+1)+'/'+dt.getDate();}
 function surveyHTML(stu,opts){
-  const me=S.schedules[S.me],hr=S.schedules[S.target];
+  const me=getSched(S.me),hr=getSched(S.target);
   const u=(v,w)=>'<u class="'+(v?'':'blank')+'">'+esc(v||'')+'</u>';
   const nm=stu&&stu.name?stu.name+'同學':'孩子';
   const rows=opts.map(o=>'<tr><td class="bx"><span class="sv-box"></span></td><td>星期'+DAYN[o.d]+(dateOf(o.d)?'（'+dateOf(o.d)+'）':'')+'</td><td>'+(o.lunch?'中午 ':'')+o.s+' – '+o.e+'</td></tr>').join('');
@@ -627,7 +641,7 @@ function renderAll(){renderChips();renderOverlay();if(S.tab==='students'){render
 
 function init(){
   $$('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-  $('#meSel').onchange=e=>{S.pick.clear();S.me=e.target.value;if(S.me===S.target){const o=teachers().find(x=>x.key!==S.me);S.target=o?o.key:'';}save();renderOverlay();};
+  $('#meSel').onchange=e=>{S.pick.clear();S.me=e.target.value;if(S.me===S.target){const o=teachers().find(x=>x.key!==S.me&&!x.derived);S.target=o?o.key:'';}save();renderOverlay();};
   $('#tSel').onchange=e=>{S.pick.clear();S.target=e.target.value;save();renderOverlay();};
   $('#clsSel').onchange=e=>{const c=e.target.value;if(!c)return;const nm=homeroomOf(c)||guessHomeroom(c);
     const t=teachers().find(x=>x.name===nm&&x.key!==S.me);
