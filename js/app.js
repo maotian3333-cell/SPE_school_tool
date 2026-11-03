@@ -231,7 +231,7 @@ function ingestText(text,srcName){
       const kind=/班級/.test(m[4])?'class':'teacher';
       try{const sc=parseSchedule(kind,m[3].trim(),m[1],m[2],body);
         purgeSamples();S.schedules[sc.key]=sc;did=true;
-        if(!S.settings.userSet){S.settings.year=sc.year;S.settings.sem=sc.sem;}
+        if(S.settings.year!==sc.year||S.settings.sem!==sc.sem){S.settings.year=sc.year;S.settings.sem=sc.sem;log('info','已切換到 '+sc.year+' 學年第 '+sc.sem+' 學期，才看得到剛匯入的課表。');}
         log('ok','已加入'+(kind==='teacher'?'教師課表':'班級課表')+'：'+sc.label+'（'+sc.year+'-'+sc.sem+'）');
         if(sc.warns&&sc.warns.length)log('info',sc.label+'：'+sc.warns.join(' '));
       }catch(e){log('err',(m[3].trim()||'某份課表')+'：'+e.message);}});
@@ -313,6 +313,8 @@ function slotExists(d,p){if(p>=1&&p<=6&&d<=5)return true;return active().some(s=
 function periodList(){const set=new Set([1,2,3,4,5,6,7]);active().forEach(s=>{for(const d in s.cells)for(const p in s.cells[d])set.add(+p);});return [...set].sort((a,b)=>a-b);}
 function dayList(){const set=new Set([1,2,3,4,5]);active().forEach(s=>{for(const d in s.cells)if(Object.keys(s.cells[d]).length)set.add(+d);});return [...set].sort((a,b)=>a-b);}
 function fixSelections(){
+  if(!active().length){const all=Object.values(S.schedules);
+    if(all.length){const m=all.slice().sort((a,b)=>(b.year+'-'+b.sem).localeCompare(a.year+'-'+a.sem))[0];S.settings.year=m.year;S.settings.sem=m.sem;}}
   const t=teachers();
   if(!t.find(x=>x.key===S.me))S.me=t[0]?t[0].key:'';
   if(!t.find(x=>x.key===S.target)||S.target===S.me)S.target=(t.find(x=>x.key!==S.me)||{}).key||'';
@@ -326,7 +328,7 @@ function renderOverlay(){
   const opt=(v,l,sel)=>'<option value="'+esc(v)+'"'+(sel?' selected':'')+'>'+esc(l)+'</option>';
   meSel.innerHTML=t.map(x=>opt(x.key,x.label,x.key===S.me)).join('')||'<option>（尚未匯入教師課表）</option>';
   tSel.innerHTML=t.map(x=>opt(x.key,x.label,x.key===S.target)).join('')||'<option>（尚未匯入教師課表）</option>';
-  const cls=[...new Set(S.roster.map(s=>s.cls))];
+  const cls=[...new Set(S.roster.map(s=>s.cls).concat(classes().map(c=>c.id)))].sort();
   cSel.innerHTML='<option value="">（選擇班級）</option>'+cls.map(c=>{const n=homeroomOf(c);return opt(c,c+(n?'　'+n:''),false);}).join('');
   const A=S.schedules[S.me],B=S.schedules[S.target];
   const grid=$('#ovGrid'),side=$('#ovSide');
@@ -608,9 +610,12 @@ async function downloadSurvey(){
 /* ---------- 畫面 ---------- */
 function renderChips(){
   const arr=Object.values(S.schedules).sort((a,b)=>(a.kind+a.label).localeCompare(b.kind+b.label,'zh-Hant'));
-  let h=arr.map(s=>'<span class="chip '+(s.kind==='class'?'cls':'')+(s.sample?' sample':'')+'">'+(s.kind==='teacher'?'老師 ':'班級 ')+esc(s.label)+'<small style="opacity:.7">'+esc(s.year)+'-'+esc(s.sem)+'</small><button data-k="'+esc(s.key)+'" aria-label="移除" type="button">×</button></span>').join('');
+  const sems=[...new Set(arr.map(s=>s.year+'-'+s.sem))].sort().reverse(),curSem=S.settings.year+'-'+S.settings.sem;
+  const semHTML=sems.length?'<label class="semsel">目前使用的學期<select id="semSel">'+sems.map(x=>{const p=x.split('-');return '<option value="'+x+'"'+(x===curSem?' selected':'')+'>'+p[0]+' 學年第 '+p[1]+' 學期</option>';}).join('')+'</select></label>':'';
+  let h=arr.map(s=>'<span class="chip '+(s.kind==='class'?'cls':'')+(s.sample?' sample':'')+((s.year+'-'+s.sem)===curSem?'':' off')+'">'+(s.kind==='teacher'?'老師 ':'班級 ')+esc(s.label)+'<small style="opacity:.7">'+esc(s.year)+'-'+esc(s.sem)+'</small><button data-k="'+esc(s.key)+'" aria-label="移除" type="button">×</button></span>').join('');
   if(S.roster.length)h+='<span class="chip'+(S.rosterSample?' sample':'')+'">學生名冊 '+S.roster.length+' 人<button data-k="__roster" aria-label="移除" type="button">×</button></span>';
-  $('#chips').innerHTML=h;
+  $('#chips').innerHTML=semHTML+h;
+  const ss=$('#semSel');if(ss)ss.onchange=e=>{const p=e.target.value.split('-');S.settings.year=p[0];S.settings.sem=p[1];S.settings.userSet=true;save();fixSelections();renderAll();};
   $$('#chips button').forEach(b=>b.onclick=()=>{if(b.dataset.k==='__roster'){S.roster=[];S.rosterSample=false;S.sel=new Set();}else delete S.schedules[b.dataset.k];afterIngest();});
   const hasSample=Object.values(S.schedules).some(s=>s.sample)||S.rosterSample;
   $('#banner').innerHTML=hasSample?'<div class="banner" style="margin-top:10px">目前顯示的是範例資料。貼上你自己的課表後，範例會自動被取代。</div>':'';}
