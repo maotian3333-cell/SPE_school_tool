@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>課表對照助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="ttl">
+      <h1>課表對照助手</h1>
+      <p>貼上或拖入課表，自動辨識。資料只在這個瀏覽器處理，不會上傳。</p>
+    </div>
+    <div class="scene" id="scene" aria-hidden="true"></div>
+    <div class="row">
+      <button class="btn sm" id="btnSample" type="button">載入範例</button>
+      <button class="btn sm" id="btnClear" type="button">清除全部資料</button>
+    </div>
+  </div>
+
+  <section class="card" aria-label="匯入課表">
+    <div class="drop" id="drop">
+      <textarea id="paste" placeholder="把教師課表、班級課表、學生資源班名冊直接貼在這裡（可以一次貼很多份），或把檔案拖進來。"></textarea>
+      <div class="row">
+        <button class="btn primary" id="btnAdd" type="button">加入</button>
+        <label class="btn" for="file">選擇檔案（txt / csv / xlsx，可多選）</label>
+        <input id="file" type="file" multiple accept=".txt,.csv,.tsv,.xlsx,.xls" hidden>
+        <span style="color:var(--muted);font-size:12.5px">貼上後會自動加入，已匯入的課表下次開啟仍會保留；學生名冊不會儲存。</span>
+      </div>
+    </div>
+    <div id="banner"></div>
+    <ul class="msgs" id="msgs"></ul>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabB1" data-tab="overlap" aria-selected="true">導師時間對照</button>
+    <button class="tab" role="tab" id="tabB2" data-tab="students" aria-selected="false">學生課表 PDF</button>
+  </div>
+
+  <section id="tab-overlap" class="card" role="tabpanel" aria-labelledby="tabB1">
+    <div class="ctl">
+      <label>我是<select id="meSel"></select></label>
+      <label>對照對象（導師）<select id="tSel"></select></label>
+      <label>或用班級找導師<select id="clsSel"></select></label>
+    </div>
+    <div class="ov-layout">
+      <div>
+        <div class="scroll-x" id="ovGrid"></div>
+        <div class="legend">
+          <span><i style="background:var(--ok-bg)"></i>兩人都有空</span>
+          <span><i style="background:var(--info-bg)"></i>我有空・導師上課中（可提前到教室等）</span>
+          <span><i style="background:var(--warn-bg)"></i>導師有空・我上課</span>
+          <span><i style="background:var(--busy-bg)"></i>兩人都有課</span>
+        </div>
+      </div>
+      <aside class="side" id="ovSide"></aside>
+    </div>
+    <div class="survey" id="surveyBox">
+      <div class="sv-head"><span id="pxPencil" aria-hidden="true"></span><h2>約家長開會・產生會議日期調查單</h2></div>
+      <p class="hint">在上方對照表勾選 3 到 6 個你和導師都有空的時段（每天另有「午休 12:30–13:00」可選），就能做出給家長的調查單。</p>
+      <div class="ctl">
+        <label>每次會議長度<select id="svDur"><option value="15">15 分鐘</option><option value="20">20 分鐘</option><option value="25">25 分鐘</option><option value="30">30 分鐘</option><option value="40">40 分鐘</option></select></label>
+        <label>延後開會<select id="svDelay"><option value="0">不延後</option><option value="10">延後 10 分鐘</option><option value="20">延後 20 分鐘</option><option value="30">延後 30 分鐘</option></select></label>
+        <label>該週星期一的日期（選填）<input type="date" id="svWeek"></label>
+        <label>回覆期限（選填）<input type="text" id="svDue" placeholder="例：11/12（四）"></label>
+        <label>會議事由<input type="text" id="svTopic"></label>
+        <label>學生<select id="svStu"></select></label>
+      </div>
+      <div class="picks" id="svPicks"></div>
+      <div class="sv-msg" id="svMsg" role="status"></div>
+      <details class="set" id="stuListBox">
+        <summary>學生清單（可自行新增）</summary>
+        <p class="hint">名冊匯入的學生會自動出現在上方「學生」選單。想另外加學生有兩種方式：(1) 在這裡按「新增一列」直接填，或貼上多行；(2) 由程式碼填入：在網頁原始碼找到 EXTRA_STUDENTS，照註解加入。手動新增的名單只存在這台電腦的瀏覽器。</p>
+        <div class="scroll-x" id="stuEdit"></div>
+        <div class="row" style="margin-top:6px"><button class="btn sm" id="btnStuAdd" type="button">＋ 新增一列</button></div>
+        <textarea id="stuBulk" placeholder="一次貼多位：每行「班級 座號 姓名」，例如 901 28 黃生"></textarea>
+        <button class="btn sm" id="btnStuBulk" type="button">加入貼上的名單</button>
+      </details>
+      <div class="sv-prev">
+        <div class="pvbox" id="svBox"></div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="btnSv" type="button">下載調查單 PDF</button><span class="info" id="svInfo"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-students" class="card" role="tabpanel" aria-labelledby="tabB2" hidden>
+    <details class="set" id="setBox">
+      <summary>學期、日期與科目名稱設定</summary>
+      <div class="set-grid">
+        <label>學年度<input type="text" id="setYear" inputmode="numeric"></label>
+        <label>學期<select id="setSem"><option value="1">上學期（第1學期）</option><option value="2">下學期（第2學期）</option></select></label>
+        <label>班級顯示<select id="setCls"><option value="code">901</option><option value="text">9年1班</option></select></label>
+        <label>實施日期起<input type="text" id="setStart"></label>
+        <label>實施日期迄<input type="text" id="setEnd"></label>
+      </div>
+      <div class="set-grid" id="aliasBox"></div>
+    </details>
+    <div class="st-layout">
+      <div>
+        <div class="row" style="justify-content:space-between;margin-bottom:6px">
+          <h2 style="margin:0">學生名單</h2>
+        </div>
+        <div class="scroll-x" id="stTable"></div>
+      </div>
+      <div>
+        <div class="pvbar">
+          <button class="btn sm" id="pvRes" aria-pressed="true" type="button">純資源班課表</button>
+          <button class="btn sm" id="pvMer" aria-pressed="false" type="button">原班＋資源班課表</button>
+        </div>
+        <div class="pvbox" id="pvBox"></div>
+      </div>
+    </div>
+  </section>
+  <footer class="foot"><div class="row" id="footPx" aria-hidden="true"></div><p>約好時間，開一場有效率的會。</p></footer>
+</div>
+
+<div class="dlbar" id="dlbar" hidden>
+  <span class="info" id="dlInfo"></span>
+  <label><input type="checkbox" id="optAll" checked>另附「全部學生合併成一份」方便一次列印</label>
+  <button class="btn primary" id="btnDl" type="button">下載全部 PDF（兩種版本）</button>
+</div>
+<div class="pdfhost" id="pdfhost" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
