@@ -45,6 +45,8 @@ input[type=text],input[type=number],select,textarea{background:var(--surface);bo
 .chip.sample{opacity:.75;border:1px dashed var(--muted)}
 .chip button{border:0;background:transparent;border-radius:50%;width:20px;height:20px;line-height:1;color:var(--muted)}
 .chip button:hover{color:var(--err)}
+.semsel{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin-right:10px}
+.chip.off{opacity:.45}
 .msgs{list-style:none;padding:0;margin:8px 0 0;font-size:13px;display:flex;flex-direction:column;gap:2px}
 .msgs .ok{color:var(--ok-fg)} .msgs .err{color:var(--err)} .msgs .info{color:var(--muted)}
 .banner{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:6px 12px;font-size:13px}
