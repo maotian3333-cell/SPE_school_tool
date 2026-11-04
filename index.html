@@ -46,27 +46,29 @@
   <section id="tab-overlap" class="card" role="tabpanel" aria-labelledby="tabB1">
     <div class="ctl">
       <label>我是<select id="meSel"></select></label>
-      <label>對照對象（導師）<select id="tSel"></select></label>
-      <label>或用班級找導師<select id="clsSel"></select></label>
+      <label>用班級找導師<select id="clsSel"></select></label>
+    </div>
+    <div class="people-box">
+      <div class="plabel">一起對照的老師（可加入導師、輔導老師等多位）</div>
+      <div id="people"></div>
+      <button class="btn sm" id="btnAddPerson" type="button">＋ 加入老師</button>
     </div>
     <div class="ov-layout">
       <div>
         <div class="scroll-x" id="ovGrid"></div>
         <div class="legend">
-          <span><i style="background:var(--ok-bg)"></i>兩人都有空</span>
-          <span><i style="background:var(--info-bg)"></i>我有空・導師上課中（可提前到教室等）</span>
-          <span><i style="background:var(--warn-bg)"></i>導師有空・我上課</span>
-          <span><i style="background:var(--busy-bg)"></i>兩人都有課</span>
+          <span><i class="star">★</i>＝空堂</span>
+          <span><i style="background:var(--ok-bg)"></i>綠底：所有人都有空（可勾選）</span>
         </div>
       </div>
       <aside class="side" id="ovSide"></aside>
     </div>
     <div class="survey" id="surveyBox">
       <div class="sv-head"><span id="pxPencil" aria-hidden="true"></span><h2>約家長開會・產生會議日期調查單</h2></div>
-      <p class="hint">在上方對照表勾選 3 到 6 個你和導師都有空的時段（每天另有「午休 12:30–13:00」可選），就能做出給家長的調查單。</p>
+      <p class="hint">在上方對照表勾選 3 到 6 個你和導師都有空的時段（每天另有「午休 12:30–13:00」可選），就能做出給家長的調查單。每個時段可以在下方各自設定要不要延後。</p>
       <div class="ctl">
         <label>每次會議長度<select id="svDur"><option value="15">15 分鐘</option><option value="20">20 分鐘</option><option value="25">25 分鐘</option><option value="30">30 分鐘</option><option value="40">40 分鐘</option></select></label>
-        <label>延後開會<select id="svDelay"><option value="0">不延後</option><option value="10">延後 10 分鐘</option><option value="20">延後 20 分鐘</option><option value="30">延後 30 分鐘</option></select></label>
+        <label>全部時段一律延後<select id="svDelay"><option value="0">不延後</option><option value="10">延後 10 分鐘</option><option value="20">延後 20 分鐘</option><option value="30">延後 30 分鐘</option></select></label>
         <label>該週星期一的日期（選填）<input type="date" id="svWeek"></label>
         <label>回覆期限（選填）<input type="text" id="svDue" placeholder="例：11/12（四）"></label>
         <label>會議事由<input type="text" id="svTopic"></label>
