@@ -62,7 +62,7 @@ const S={schedules:{},roster:[],rosterSample:false,subjects:[],
 function save(){try{const sch={};for(const k in S.schedules)if(!S.schedules[k].sample)sch[k]=S.schedules[k];
   localStorage.setItem(LS,JSON.stringify({schedules:sch,settings:S.settings,me:S.me,people:S.people,homeroom:S.homeroom,alias:S.alias,extra:S.extra,sv:S.sv}));}catch(e){}}
 function load(){try{const j=JSON.parse(localStorage.getItem(LS)||'null');if(!j)return false;
-  Object.assign(S.schedules,j.schedules||{});Object.assign(S.settings,j.settings||{});S.me=j.me||'';S.people=(j.people&&j.people.length)?j.people:[{role:'導師',key:j.target||''}];S.homeroom=j.homeroom||{};S.alias=j.alias||{};S.extra=j.extra||[];Object.assign(S.sv,j.sv||{});
+  Object.assign(S.schedules,j.schedules||{});for(const k in S.schedules){const s=S.schedules[k];if(s.cells){delete s.cells[6];delete s.cells[7];}s.errs=[];}/* 舊版存下來的星期六警告不再保留 */Object.assign(S.settings,j.settings||{});S.me=j.me||'';S.people=(j.people&&j.people.length)?j.people:[{role:'導師',key:j.target||''}];S.homeroom=j.homeroom||{};S.alias=j.alias||{};S.extra=j.extra||[];Object.assign(S.sv,j.sv||{});
   return Object.keys(S.schedules).length>0;}catch(e){return false;}}
 
 /* ---------- delimited text ---------- */
