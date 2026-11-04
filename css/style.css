@@ -6,7 +6,7 @@
   --info-bg:#dce8f8; --info-fg:#1b4783;
   --warn-bg:#f9ecc9; --warn-fg:#76460a;
   --busy-bg:#e8ebed; --busy-fg:#4b5860;
-  --err:#b3261e;
+  --err:#b3261e; --star:#d19a14;
   --px-k:#34444e; --px-a:#0d6b70; --px-b:#e3b03b; --px-c:#d8786b; --px-d:#86b6e0; --px-g:#6aa874; --px-n:#9a6b3f; --px-m:#d3dee4; --px-y:#f3e6bd; --px-w:#ffffff;
   --font:'Noto Sans TC','PingFang TC','Microsoft JhengHei','Noto Sans CJK TC',system-ui,sans-serif;
   --radius:10px;
@@ -71,6 +71,8 @@ table.ov th.p small{display:block;font-size:11px;font-variant-numeric:tabular-nu
 .slot .who span{min-width:0;overflow-wrap:anywhere}
 .slot .note{margin-top:auto;font-weight:700;font-size:12px;padding-top:3px}
 .s-both{background:var(--ok-bg);color:var(--ok-fg)}
+.star{font-style:normal;color:var(--star);font-size:17px;line-height:1.2}
+.slot .who span{display:flex;align-items:center}
 .s-go{background:var(--info-bg);color:var(--info-fg)}
 .s-wait{background:var(--warn-bg);color:var(--warn-fg)}
 .s-busy{background:var(--busy-bg);color:var(--busy-fg)}
@@ -160,32 +162,43 @@ details.set summary{cursor:pointer;font-weight:500}
   font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei','Noto Sans CJK TC',sans-serif;line-height:1.45}
 .sh-title{text-align:center;font-size:19px;font-weight:700}
 .sh-sub{text-align:center;font-size:27px;font-weight:700;letter-spacing:.25em;margin:2px 0 12px}
-.sh-info{display:flex;gap:30px;font-size:18px;margin:3px 0}
+.sh-info{display:flex;gap:30px;font-size:21px;margin:4px 0}
 .sh-info u{text-decoration:none;border-bottom:1px solid #000;padding:0 8px;display:inline-block;min-width:44px;text-align:center}
 .sh-info u.blank{min-width:96px}
-.sh-rules{font-size:15px;line-height:1.45;margin:10px 0 12px}
+.sh-rules{font-size:18px;line-height:1.4;margin:10px 0 12px}
 .sh-rules div{padding-left:1.4em;text-indent:-1.4em}
 .sheet table{width:100%;border-collapse:collapse;table-layout:fixed}
 .sheet table.grid th,.sheet table.grid td{border:1px solid #222;text-align:center;padding:1px 2px;font-size:15px}
-.sheet table.grid th{background:#e9e9e9;font-weight:700;height:30px}
-.sheet table.grid th.p{width:84px;line-height:1.1}
-.sheet table.grid th.p small{display:block;font-size:10.5px;font-weight:400}
+.sheet table.grid th{background:#e9e9e9;font-weight:700;height:36px}
+.sheet table.grid th.d{font-size:26px}
+.sheet table.grid th.p{width:98px;line-height:1.1}
+.sheet table.grid th.p span{display:block;font-size:19px;font-weight:700}
+.sheet table.grid th.p small{display:block;font-size:12.5px;font-weight:500;margin-top:2px}
 .sheet table.grid td{height:var(--rowh)}
-.sheet table.grid tr.lunch td{height:20px;background:#f3f3f3;font-size:12px;letter-spacing:.8em;color:#444}
-.c-res{font-weight:700;color:#000;line-height:1.05}
-.c-res b{display:block;font-size:25px;letter-spacing:.02em}
-.c-res.sm b{font-size:16px}
-.c-res span{display:block;font-size:14px;font-weight:500;margin-top:1px}
+.sheet table.grid tr.lunch td{height:22px;background:#f3f3f3;font-size:13px;letter-spacing:.8em;color:#444}
+.c-res{font-weight:700;color:#000;line-height:1.02}
+.c-res b{display:block;font-size:27px}
+.c-res.n2 b,.c-res.n3 b,.c-res.n4 b{font-size:21px}
 .c-orig{color:#3f3f3f;line-height:1.05}
 .c-orig b{display:block;font-weight:500;font-size:22px;letter-spacing:.02em}
 .c-orig.sm b{font-size:15px}
 .c-orig span{display:block;font-size:11px;margin-top:1px}
 .c-orig i{display:block;font-size:10px;font-style:normal}
-.sh-key{font-size:12px;color:#333;margin:4px 0 0;text-align:right}
-.sheet table.lg{margin-top:12px;font-size:16px}
-.sheet table.lg th,.sheet table.lg td{border:1px solid #222;padding:2px 6px;text-align:center}
-.sheet table.lg th{background:#e9e9e9;font-weight:500}
-.sh-date{margin-top:10px;font-size:15px}
-.sh-cap{font-size:15px;font-weight:700;margin:10px 0 3px}
+.sh-key{font-size:13px;color:#333;margin:4px 0 0;text-align:right}
+.sheet table.lg{margin-top:6px;font-size:17px}
+.sheet table.lg th,.sheet table.lg td{border:1px solid #222;padding:3px 4px;text-align:center}
+.sheet table.lg th{background:#e9e9e9;font-weight:700;width:64px}
+.sh-date{margin-top:10px;font-size:16px}
+.sh-cap{font-size:17px;font-weight:700;margin:10px 0 3px}
 .pdfhost{position:fixed;left:-12000px;top:0;width:794px;height:1123px;pointer-events:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 一起對照的老師 */
+.people-box{margin-bottom:12px}
+.plabel{font-size:12px;color:var(--muted);margin-bottom:4px}
+.prow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.prow select{font-size:15px;min-width:0;max-width:100%}
+.chip.pick{padding:3px 4px 3px 10px;gap:8px}
+.chip.pick select{border:1px solid var(--line);border-radius:6px;padding:1px 4px;font-size:12.5px}
+.chip.pick small{color:var(--muted)}
+.chip.bad{background:var(--warn-bg);color:var(--warn-fg)}
