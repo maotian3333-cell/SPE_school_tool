@@ -53,16 +53,65 @@ function sceneSVG(){
   return pix(g.map(r=>r.join('')),1);}
 const emptyHTML=(text,k)=>'<div class="empty emp">'+(SPR[k]||'')+'<span>'+esc(text)+'</span></div>';
 
+/* ---------- 辦公室座位表 ----------
+ * 資料來源：「115 學年度 導師及專任教師辦公室座位圖」。
+ * 寫法：'排-位置':'老師姓名'。排＝從下往上數；位置＝同一排從左往右數（沒人坐的空位也要算進去）。
+ * 例：丹鼎樓四樓 409 的 '2-3':'鐘惠雅' → 通知單左上角會顯示「丹鼎樓四樓 409 2-3」。
+ * 換學年、換座位時，只要改這一段就好（姓名要和課表上的老師姓名完全一樣）。 */
+const SEAT_MAP=[
+  ['迎曦樓三樓 312-313',{
+    '1-1':'蔡志強', '1-2':'江美珠', '1-3':'林巧珮', '1-4':'吳明珊', '1-5':'陳麗玉', '1-6':'王意婷',
+    '1-7':'王慧琴', '1-8':'阮昱臻', '1-9':'周宜融', '2-1':'陳燕如', '2-2':'鄭秀玲', '2-3':'劉芳婷',
+    '2-4':'陳胤如', '2-5':'楊守民', '2-6':'李銘珠', '2-7':'吳娟瑜', '2-8':'楊惇貴', '2-9':'紀昕妤',
+    '2-10':'陳靜薇', '3-1':'蔡峰菖', '3-3':'李淅湄', '3-4':'高惠娟', '3-5':'呂櫻玉', '3-6':'夏良業',
+    '3-7':'王秀筠', '3-8':'陳彥樺', '3-9':'黃純慧', '3-10':'余季蓁', '4-1':'黃宇瑄', '4-2':'黃美智',
+    '4-3':'趙麗雲', '4-4':'林佳瑩', '4-5':'王乃聖', '4-6':'周木財', '4-7':'吳亭蓉', '4-8':'林心宜',
+    '4-9':'謝宜頡', '4-10':'官美霞',
+  }],
+  ['迎曦樓四樓 414-415',{
+    '1-1':'陳彥旭', '1-2':'徐婉綺', '1-3':'江素滿', '1-4':'劉頌平', '1-5':'朱蕙苓', '1-6':'黃敏婷',
+    '1-7':'林正順', '1-8':'洪媖雪', '1-9':'蔡嘉柔', '1-10':'陳孟君', '2-1':'連淑惠', '2-2':'鄭丹',
+    '2-3':'莊宜家', '2-4':'周禹丞', '2-5':'賴玟玲', '2-6':'林佳慧', '2-7':'杜鳳清', '2-8':'李富川',
+    '2-9':'林季諭', '2-10':'許升銓', '3-1':'劉詩捷', '3-2':'蔡秀芳', '3-3':'陳志文', '3-4':'林俊昌',
+    '3-5':'黃琦璋', '3-7':'劉芷廷', '3-8':'吳韋寬', '3-9':'吳佳玲', '3-10':'邱雅琳', '4-1':'林靜芬',
+    '4-2':'蘇郁雅', '4-3':'林旻秋', '4-4':'劉淑芬', '4-5':'吳佩蓉', '4-6':'何美倫', '4-7':'蔡睿詮',
+    '4-8':'楊瑞蓮', '4-9':'許文萍',
+  }],
+  ['丹鼎樓四樓 409',{
+    '1-1':'王一婷', '1-2':'林宜君', '1-3':'蔡宜諼', '1-4':'凃玉娟', '1-5':'伍智瑜', '1-6':'黃明宏',
+    '1-7':'方健州', '1-8':'葉俊豪', '1-9':'李立儀', '1-10':'陳淑珍', '2-1':'林樹人', '2-3':'鐘惠雅',
+    '2-4':'楊茜惠', '2-5':'林建宏', '2-6':'溫杰勳', '2-7':'陳昱蓁', '2-8':'蔣寶慧', '2-9':'郭國樑',
+    '2-10':'張瑞顯', '3-1':'黃如瑋', '3-2':'張文俊', '3-3':'陳思穎', '3-4':'粘惠柔', '3-5':'許淑珍',
+    '3-6':'張素連', '3-7':'梁雅映', '3-8':'李耿維', '3-9':'廖美蘭', '4-1':'李春淋', '4-2':'羅昊剛',
+    '4-3':'劉梅娟', '4-4':'陳慧如', '4-5':'呂麗君', '4-6':'陳曉琪', '4-7':'溫素敏', '4-8':'林彥良',
+    '4-9':'黃銘義', '4-10':'葉競賢',
+  }],
+  ['丹鼎樓四樓 410',{
+    '1-3':'陳韋仲', '1-4':'馮蘭馨', '2-1':'徐碧姻', '2-3':'劉怡君', '2-4':'吳汶珊', '3-1':'林家卉',
+    '3-2':'錢君銜', '3-3':'劉芷彤', '3-4':'吳銘彥', '4-1':'徐淳濃', '4-2':'周逸婷', '4-3':'江享貞',
+    '4-4':'詹盛仁',
+  }],
+  ['丹鼎樓五樓 510',{
+    '1-2':'林英哲', '1-3':'連雅蓉', '2-1':'周宛瑢', '2-2':'毛思文', '2-3':'劉宜純', '3-2':'劉懿慧',
+    '3-3':'江秋蘭',
+  }],
+  ['朝陽樓四樓 412',{
+    '1-1':'黃俊衛', '1-2':'葉步芳', '2-1':'柳心恬', '2-2':'莊文水', '3-1':'張詩宜', '3-2':'徐柏青',
+    '4-1':'楊正仲', '4-2':'劉梅芳',
+  }],
+];
+const SEATS={};SEAT_MAP.forEach(function(r){for(const k in r[1])SEATS[r[1][k]]=r[0]+' '+k;});
+
 const S={schedules:{},roster:[],rosterSample:false,subjects:[],
   settings:{year:'',sem:'',clsFmt:'code',start:'',end:'',datesEdited:false,userSet:false},
   me:'',target:'',homeroom:{},alias:{},sel:new Set(),pv:'',pvMode:'res',tab:'overlap',
-  pick:new Set(),pickDelay:{},people:[{role:'導師',key:''}],pickInit:false,svMsg:'',extra:[],sv:{dur:20,delay:0,week:'',due:'',topic:'學生的學習與輔導事宜',stu:''}};
+  pick:new Set(),pickDelay:{},people:[{role:'導師',key:''}],pickInit:false,svMsg:'',extra:[],mt:{title:'0',custom:'',stu:'',place:'0',placeCustom:'',date:'',t1:'',t2:'',host:'',ext:'131',off:[],extraRec:[]},mtPage:0,sv:{dur:20,delay:0,week:'',due:'',topic:'學生的學習與輔導事宜',stu:''}};
 
 /* ---------- storage ---------- */
 function save(){try{const sch={};for(const k in S.schedules)if(!S.schedules[k].sample)sch[k]=S.schedules[k];
-  localStorage.setItem(LS,JSON.stringify({schedules:sch,settings:S.settings,me:S.me,people:S.people,homeroom:S.homeroom,alias:S.alias,extra:S.extra,sv:S.sv}));}catch(e){}}
+  localStorage.setItem(LS,JSON.stringify({schedules:sch,settings:S.settings,me:S.me,people:S.people,homeroom:S.homeroom,alias:S.alias,extra:S.extra,sv:S.sv,mt:S.mt}));}catch(e){}}
 function load(){try{const j=JSON.parse(localStorage.getItem(LS)||'null');if(!j)return false;
-  Object.assign(S.schedules,j.schedules||{});for(const k in S.schedules){const s=S.schedules[k];if(s.cells){delete s.cells[6];delete s.cells[7];}s.errs=[];}/* 舊版存下來的星期六警告不再保留 */Object.assign(S.settings,j.settings||{});S.me=j.me||'';S.people=(j.people&&j.people.length)?j.people:[{role:'導師',key:j.target||''}];S.homeroom=j.homeroom||{};S.alias=j.alias||{};S.extra=j.extra||[];Object.assign(S.sv,j.sv||{});
+  Object.assign(S.schedules,j.schedules||{});for(const k in S.schedules){const s=S.schedules[k];if(s.cells){delete s.cells[6];delete s.cells[7];}s.errs=[];}/* 舊版存下來的星期六警告不再保留 */Object.assign(S.settings,j.settings||{});S.me=j.me||'';S.people=(j.people&&j.people.length)?j.people:[{role:'導師',key:j.target||''}];S.homeroom=j.homeroom||{};S.alias=j.alias||{};S.extra=j.extra||[];Object.assign(S.sv,j.sv||{});Object.assign(S.mt,j.mt||{});
   return Object.keys(S.schedules).length>0;}catch(e){return false;}}
 
 /* ---------- delimited text ---------- */
@@ -492,7 +541,7 @@ function renderStudents(){
   S.roster.forEach(st=>{
     const cs=getClass(st.cls),slots=st.entries.reduce((a,e)=>a+e.slots.length,0),hr=S.homeroom[hrKey(st.cls)]||'',ev=eventTeacher(st.cls),gs=ev?'':guessHomeroom(st.cls);
     h+='<tr data-id="'+esc(st.id)+'"'+(st.id===S.pv?' class="pv"':'')+'><td><input type="checkbox" class="chk" '+(S.sel.has(st.id)?'checked':'')+' aria-label="選取"></td>'
-      +'<td>'+esc(clsText(st))+'</td><td>'+esc(st.seat)+'</td><td>'+esc(st.name)+'</td>'
+      +'<td class="nm">'+esc(clsText(st))+'</td><td class="nm">'+esc(st.seat)+'</td><td class="nm">'+esc(st.name)+'</td>'
       +'<td>'+(st.entries.length?st.entries.map(e=>esc(subjName(e))).join('、')+'<br><small style="color:var(--muted)">共 '+slots+' 節</small>':'<span class="tag i">沒有資源班課程</span>')+'</td>'
       +'<td><input type="text" class="hr" data-cls="'+esc(st.cls)+'" value="'+esc(hr)+'" placeholder="'+esc(ev||'導師姓名')+'">'+(ev&&!hr?'<span class="tag g" title="取自班級課表中「學校行事」的授課教師">學校行事</span>':'')
       +(gs?'<button class="sug" data-cls="'+esc(st.cls)+'" data-g="'+esc(gs)+'" type="button"'+(hr?' hidden':'')+'>用「'+esc(gs)+'」</button>':'')+'</td>'
@@ -670,6 +719,125 @@ async function downloadSurvey(){
   }catch(e){info.textContent=(e&&e.code==='declined')?'已取消下載。':'產生失敗：'+((e&&e.message)||e);}
   $('#pdfhost').innerHTML='';btn.disabled=false;renderSvPicks();}
 
+/* ---------- 會議通知單 ---------- */
+/* 會議名稱（前面會自動加上「丹鳳高中 ○○○ 學年度」）。想新增選項就加在這裡。 */
+const MT_TITLES=['特殊生個別化教育計畫擬定會議','特殊生個別化教育計畫檢討暨擬定會議','特殊生個別化教育計畫檢討暨轉銜會議','特殊生個案會議'];
+/* 會議地點選項。想新增或修改就改這裡。 */
+const MT_PLACES=['星光樓二樓 高輔中心','星光樓二樓 團輔室','星光樓三樓 星光會議室','星光樓三樓 雲水軒','鳳翔樓二樓 學習中心 A教室','鳳翔樓二樓 學習中心 B教室','鳳翔樓二樓 學習中心 C教室','鳳翔樓二樓 學習中心 D教室','鳳翔樓二樓 學習中心 E教室','鳳翔樓二樓 學習中心 F教室','鳳翔樓二樓 學習中心 G教室'];
+/* 通知單上的固定文字（第 1 點的班級與學生姓名會自動帶入）。 */
+const MT_CONTENT=['本學年特教服務說明,教育目標及輔導方式討論。','課程內容、作業調整和成績評量協調。','臨時動議。'];
+const MT_ATTEND=['個案導師與各科任課教師。','特教組長、特教個管教師。','學生、家長。'];
+const MT_NOTE='該生為鑑輔會通過之特教需求學生,會中將討論學生的能力、特質、作業和評量調整';
+/* 姓名第二個字用 O 遮蔽：王大明 → 王O明、黃生 → 黃O */
+function maskName(n){n=String(n||'');return n.length<2?n:n[0]+'O'+n.slice(2);}
+function mtStudent(){return allStudents().find(x=>stuKey(x)===S.mt.stu)||null;}
+/* 這個班的所有授課老師：科目、是否導師（班級課表裡有「學校行事」的老師，或自行指定的導師） */
+function mtTeachers(cls){
+  const c=getClass(cls),map=new Map();
+  if(c)for(const d of Object.keys(c.cells).sort())for(const p of Object.keys(c.cells[d]).sort((a,b)=>a-b)){
+    const x=c.cells[d][p],nm=String(x.teacher||'').trim();if(!nm)continue;
+    const r=map.get(nm)||{name:nm,subs:[],home:false};
+    if(/學校行事/.test(x.subject))r.home=true;else{const s=cleanSubject(x.subject);if(s&&!r.subs.includes(s))r.subs.push(s);}
+    map.set(nm,r);}
+  const hn=homeroomOf(cls);
+  if(hn){const r=map.get(hn)||{name:hn,subs:[],home:false};r.home=true;map.set(hn,r);}
+  const arr=[...map.values()].map(r=>({name:r.name,suffix:r.home?'導師':'教師',sub:r.subs.join('、')}));
+  return arr.filter(r=>r.suffix==='導師').concat(arr.filter(r=>r.suffix!=='導師'));}
+function mtAllRecs(){
+  const st=mtStudent();
+  const base=st?mtTeachers(st.cls):[];
+  return base.concat(S.mt.extraRec.map(r=>({name:r.name,suffix:r.suffix||'教師',sub:r.sub||'',extra:true})));}
+function mtRecs(){return mtAllRecs().filter(r=>!S.mt.off.includes(r.name));}
+function mtTitleText(){const m=S.mt;if(m.title==='custom')return m.custom||'（請輸入會議名稱）';
+  return '丹鳳高中 '+(S.settings.year||'＿＿＿')+' 學年度'+MT_TITLES[+m.title||0];}
+function mtPlaceText(){const m=S.mt;return m.place==='custom'?(m.placeCustom||'＿＿＿＿＿＿'):MT_PLACES[+m.place||0];}
+function mtWhen(){const m=S.mt;let d='＿月＿日　星期＿';
+  if(m.date){const dt=new Date(m.date+'T00:00:00');if(!isNaN(dt.getTime()))d=(dt.getMonth()+1)+'月'+dt.getDate()+'日　星期'+DAYN[dt.getDay()||7];}
+  return d+'　'+(m.t1||'＿＿:＿＿')+'–'+(m.t2||'＿＿:＿＿');}
+function mtHost(){return S.mt.host||(getSched(S.me)||{}).name||'';}
+function mtNoticeHTML(rec){
+  if(!rec)return '<div class="mt-half"></div>';
+  const st=mtStudent(),host=mtHost(),h=host?esc(host)+'教師':'＿＿＿教師';
+  const seat=SEATS[rec.name]||'';
+  const first=(st?esc(clsOf(st.cls)):'＿＿＿')+' 個案'+esc(st?maskName(st.name):'＿O＿')+'能力現況描述。';
+  const ol=a=>'<ol>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>';
+  return '<div class="mt-half">'
+   +'<div class="mt-seat">'+(seat?esc(seat):'&nbsp;')+'</div>'
+   +'<div class="mt-title">'+esc(mtTitleText())+'</div>'
+   +'<table class="mt"><colgroup><col style="width:104px"><col><col style="width:84px"><col style="width:250px"></colgroup><tbody>'
+   +'<tr><th>受文者</th><td colspan="3"><span class="mt-name">'+esc(rec.name)+esc(rec.suffix)+'</span>'+(rec.sub?'<small>'+esc(rec.sub)+'</small>':'')+'</td></tr>'
+   +'<tr><th>會議內容</th><td colspan="3"><ol><li>'+first+'</li>'+MT_CONTENT.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol></td></tr>'
+   +'<tr><th>會議地點</th><td colspan="3">'+esc(mtPlaceText())+'</td></tr>'
+   +'<tr><th>會議時間</th><td colspan="3">'+esc(mtWhen())+'</td></tr>'
+   +'<tr><th>主持人</th><td>'+h+'</td><th>連絡人</th><td>'+h+'　分機 '+esc(S.mt.ext||'')+'</td></tr>'
+   +'<tr><th>出席人員</th><td colspan="3">'+ol(MT_ATTEND)+'</td></tr>'
+   +'<tr><th>備註</th><td colspan="3">'+esc(MT_NOTE)+'</td></tr>'
+   +'</tbody></table></div>';}
+/* 一張 A4 放兩份通知單（上下各一，中間虛線可裁開），第 i 張放第 2i、2i+1 位老師 */
+function mtSheetHTML(recs,i){return '<div class="sheet mtp">'+mtNoticeHTML(recs[2*i])+mtNoticeHTML(recs[2*i+1])+'</div>';}
+function mtSheets(){return Math.ceil(mtRecs().length/2);}
+function renderMeeting(){
+  if(!$('#mtTitle'))return;
+  const m=S.mt,st=allStudents();
+  $('#mtTitle').innerHTML=MT_TITLES.map((t,i)=>'<option value="'+i+'">'+esc(t)+'</option>').join('')+'<option value="custom">自訂會議名稱…</option>';
+  $('#mtTitle').value=String(m.title);$('#mtCustomWrap').hidden=m.title!=='custom';$('#mtCustom').value=m.custom||'';
+  $('#mtStu').innerHTML='<option value="">（請選擇個案學生）</option>'+st.map(x=>'<option value="'+esc(stuKey(x))+'">'+esc((x.cls?x.cls+' ':'')+(x.seat?x.seat+'號 ':'')+x.name)+'</option>').join('');
+  if(![...$('#mtStu').options].some(o=>o.value===m.stu))m.stu='';
+  $('#mtStu').value=m.stu;
+  $('#mtPlace').innerHTML=MT_PLACES.map((t,i)=>'<option value="'+i+'">'+esc(t)+'</option>').join('')+'<option value="custom">其他地點…</option>';
+  $('#mtPlace').value=String(m.place);$('#mtPlaceWrap').hidden=m.place!=='custom';$('#mtPlaceCustom').value=m.placeCustom||'';
+  $('#mtDate').value=m.date||'';$('#mtT1').value=m.t1||'';$('#mtT2').value=m.t2||'';
+  $('#mtHost').value=m.host||'';$('#mtHost').placeholder=(getSched(S.me)||{}).name||'特教老師姓名';$('#mtExt').value=m.ext||'';
+  renderMtRecs();renderMtPreview();}
+function renderMtRecs(){
+  const box=$('#mtRecs'),all=mtAllRecs(),st=mtStudent();
+  if(!st){box.innerHTML='<p class="hint" style="margin:6px 0">先在上方選擇個案學生，這裡就會列出該班所有授課老師。</p>';return;}
+  const hasCls=!!getClass(st.cls);
+  let h=hasCls?'':'<p class="hint warn" style="margin:6px 0">還沒有匯入 '+esc(st.cls)+' 班的班級課表，無法自動列出授課老師。可以匯入課表，或用下方「手動加入」。</p>';
+  h+=all.map((r,i)=>{const on=!S.mt.off.includes(r.name),seat=SEATS[r.name];
+    return '<label class="mt-rec"><input type="checkbox" data-n="'+esc(r.name)+'"'+(on?' checked':'')+'><span class="nm">'+esc(r.name)+esc(r.suffix)+'</span><small>'+esc(r.sub)+'</small>'
+      +(seat?'<em>'+esc(seat)+'</em>':'<span class="tag w">查無座位</span>')+(r.extra?'<button type="button" class="btn sm" data-del="'+esc(r.name)+'" aria-label="移除">×</button>':'')+'</label>';}).join('');
+  h+='<div class="row" style="margin:8px 0 2px"><button class="btn sm" id="mtAll" type="button">全選</button><button class="btn sm" id="mtNone" type="button">全不選</button></div>';
+  box.innerHTML=h;
+  $$('#mtRecs input[data-n]').forEach(c=>c.onchange=()=>{const n=c.dataset.n;S.mt.off=S.mt.off.filter(x=>x!==n);if(!c.checked)S.mt.off.push(n);save();S.mtPage=0;renderMtPreview();});
+  $$('#mtRecs [data-del]').forEach(b=>b.onclick=e=>{e.preventDefault();S.mt.extraRec=S.mt.extraRec.filter(x=>x.name!==b.dataset.del);save();renderMtRecs();renderMtPreview();});
+  $('#mtAll').onclick=()=>{S.mt.off=[];save();renderMtRecs();renderMtPreview();};
+  $('#mtNone').onclick=()=>{S.mt.off=all.map(r=>r.name);save();renderMtRecs();renderMtPreview();};}
+function renderMtPreview(){
+  const box=$('#mtBox'),recs=mtRecs(),n=mtSheets();
+  if(S.mtPage>=n)S.mtPage=Math.max(0,n-1);
+  $('#mtInfo').textContent=recs.length?'共 '+recs.length+' 位受文者 → '+n+' 張 A4（每張兩份）':'';
+  $('#mtPrev').disabled=S.mtPage<=0;$('#mtNext').disabled=S.mtPage>=n-1;$('#mtPg').textContent=n?('第 '+(S.mtPage+1)+' / '+n+' 張'):'';
+  $('#btnMt').disabled=!recs.length;
+  if(!recs.length){box.innerHTML=emptyHTML('選好個案學生與受文者，這裡會出現通知單預覽。','book');return;}
+  mountPreview(box,mtSheetHTML(recs,S.mtPage));}
+async function downloadMeeting(){
+  const btn=$('#btnMt'),info=$('#mtDl'),recs=mtRecs(),n=mtSheets();
+  if(!recs.length||!needLibs(info))return;
+  btn.disabled=true;
+  try{
+    let pdf=null;
+    for(let i=0;i<n;i++){info.textContent='產生中 '+(i+1)+' / '+n;const img=await renderImg(mtSheetHTML(recs,i));
+      if(!pdf)pdf=imgToPdf(img);else{pdf.addPage('a4','portrait');pdf.addImage(img,'PNG',0,0,210,297,undefined,'FAST');}}
+    const st=mtStudent();
+    await saveFile('會議通知單_'+safe((st?st.cls+'_'+maskName(st.name):'空白'))+'.pdf',pdf.output('blob'));
+    info.textContent='已完成。';
+  }catch(e){info.textContent=(e&&e.code==='declined')?'已取消下載。':'產生失敗：'+((e&&e.message)||e);}
+  $('#pdfhost').innerHTML='';btn.disabled=false;renderMtPreview();}
+function initMeeting(){
+  const m=S.mt,upd=(f,full)=>e=>{m[f]=e.target.value;save();if(full)renderMeeting();else renderMtPreview();};
+  $('#mtTitle').onchange=upd('title',true);$('#mtCustom').oninput=upd('custom');
+  $('#mtStu').onchange=e=>{m.stu=e.target.value;m.off=[];S.mtPage=0;save();renderMeeting();};
+  $('#mtPlace').onchange=upd('place',true);$('#mtPlaceCustom').oninput=upd('placeCustom');
+  $('#mtDate').oninput=upd('date');$('#mtT1').oninput=upd('t1');$('#mtT2').oninput=upd('t2');
+  $('#mtHost').oninput=upd('host');$('#mtExt').oninput=upd('ext');
+  $('#mtPrev').onclick=()=>{S.mtPage--;renderMtPreview();};$('#mtNext').onclick=()=>{S.mtPage++;renderMtPreview();};
+  $('#mtAdd').onclick=()=>{const n=$('#mtAddName').value.trim();if(!n)return;
+    S.mt.extraRec=S.mt.extraRec.filter(x=>x.name!==n);S.mt.extraRec.push({name:n,suffix:$('#mtAddSuf').value,sub:$('#mtAddSub').value.trim()});
+    $('#mtAddName').value='';$('#mtAddSub').value='';save();renderMtRecs();renderMtPreview();};
+  $('#btnMt').onclick=downloadMeeting;
+  window.addEventListener('resize',()=>{if(S.tab==='meeting')renderMtPreview();});}
+
 /* ---------- 畫面 ---------- */
 function renderChips(){
   const arr=Object.values(S.schedules).sort((a,b)=>(a.kind+a.label).localeCompare(b.kind+b.label,'zh-Hant'));
@@ -684,9 +852,9 @@ function renderChips(){
   $('#banner').innerHTML=hasSample?'<div class="banner" style="margin-top:10px">目前顯示的是範例資料。貼上你自己的課表後，範例會自動被取代。</div>':'';}
 function setTab(t){S.tab=t;
   $$('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
-  $('#tab-overlap').hidden=t!=='overlap';$('#tab-students').hidden=t!=='students';
-  if(t==='students'){renderSettings();renderStudents();}updateDl();}
-function renderAll(){renderChips();renderOverlay();if(S.tab==='students'){renderSettings();renderStudents();}else updateDl();}
+  $('#tab-overlap').hidden=t!=='overlap';$('#tab-students').hidden=t!=='students';$('#tab-meeting').hidden=t!=='meeting';
+  if(t==='students'){renderSettings();renderStudents();}if(t==='meeting')renderMeeting();updateDl();}
+function renderAll(){renderChips();renderOverlay();if(S.tab==='students'){renderSettings();renderStudents();}else updateDl();if(S.tab==='meeting')renderMeeting();}
 
 function init(){
   $$('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
@@ -729,8 +897,8 @@ function init(){
   $('#btnStuAdd').onclick=()=>{S.extra.push({cls:'',seat:'',name:''});save();renderStuEditor();const ins=$$('#stuEdit input');if(ins.length)ins[ins.length-3].focus();};
   $('#btnStuBulk').onclick=()=>{const ta=$('#stuBulk');ta.value.split(/\n/).forEach(l=>{const p=l.trim().split(/[\t,，\s]+/).filter(Boolean);if(p.length>=3)S.extra.push({cls:p[0],seat:p[1],name:p.slice(2).join('')});else if(p.length===2)S.extra.push({cls:'',seat:p[0],name:p[1]});});ta.value='';save();renderStuEditor();renderSurvey();};
   window.addEventListener('resize',()=>{renderSvPreview();});
-  renderStuEditor();
-  window.__app={S:S,pickOpts:pickOpts,surveyHTML:surveyHTML,allStudents:allStudents,eventTeacher:eventTeacher,parseSchedule:parseSchedule,parseRoster:parseRoster,ingestText:ingestText,sheetHTML:sheetHTML,renderAll:renderAll,setTab:setTab};
+  renderStuEditor();initMeeting();
+  window.__app={S:S,pickOpts:pickOpts,surveyHTML:surveyHTML,allStudents:allStudents,eventTeacher:eventTeacher,parseSchedule:parseSchedule,parseRoster:parseRoster,ingestText:ingestText,sheetHTML:sheetHTML,renderAll:renderAll,setTab:setTab,mtRecs:mtRecs,mtSheetHTML:mtSheetHTML,mtTeachers:mtTeachers,SEATS:SEATS};
 }
 init();
 })();
