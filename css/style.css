@@ -202,3 +202,25 @@ details.set summary{cursor:pointer;font-weight:500}
 .chip.pick select{border:1px solid var(--line);border-radius:6px;padding:1px 4px;font-size:12.5px}
 .chip.pick small{color:var(--muted)}
 .chip.bad{background:var(--warn-bg);color:var(--warn-fg)}
+/* 班級、座號、姓名不換行（三字姓名才不會被切成兩行） */
+table.st td.nm,table.st th{white-space:nowrap}
+.sh-info span,.sh-info u{white-space:nowrap}
+
+/* 會議通知單 */
+.mt-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start}
+@media(max-width:860px){.mt-layout{grid-template-columns:1fr}}
+.mt-rec{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);font-size:14px}
+.mt-rec .nm{font-weight:700}
+.mt-rec small{color:var(--muted)}
+.mt-rec em{margin-left:auto;font-size:12px;color:var(--muted)}
+.sheet.mtp{padding:0}
+.mt-half{height:561px;padding:26px 44px 14px;overflow:hidden;box-sizing:border-box}
+.mt-half+.mt-half{border-top:1.5px dashed #888}
+.mt-seat{font-size:12.5px;font-style:italic;color:#555;height:16px;line-height:16px}
+.mt-title{text-align:center;font-size:21px;font-weight:700;letter-spacing:.04em;margin:6px 0 12px}
+.sheet table.mt{margin:0}
+.sheet table.mt th,.sheet table.mt td{border:1px solid #222;padding:6px 9px;font-size:17px;line-height:1.5;vertical-align:middle}
+.sheet table.mt th{background:#efefef;text-align:center;font-weight:700;letter-spacing:.1em}
+.sheet table.mt td ol{margin:0;padding-left:1.5em}
+.sheet table.mt .mt-name{font-size:19px;font-weight:700}
+.sheet table.mt td small{font-size:12px;color:#333;margin-left:8px}
