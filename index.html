@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261104b">
+<link rel="stylesheet" href="css/style.css?v=20261106">
 </head>
 <body>
 <div class="wrap">
@@ -41,6 +41,7 @@
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tabB1" data-tab="overlap" aria-selected="true">導師時間對照</button>
     <button class="tab" role="tab" id="tabB2" data-tab="students" aria-selected="false">學生課表 PDF</button>
+    <button class="tab" role="tab" id="tabB3" data-tab="meeting" aria-selected="false">會議通知單</button>
   </div>
 
   <section id="tab-overlap" class="card" role="tabpanel" aria-labelledby="tabB1">
@@ -119,6 +120,40 @@
       </div>
     </div>
   </section>
+  <section id="tab-meeting" class="card" role="tabpanel" aria-labelledby="tabB3" hidden>
+    <p class="hint" style="margin-top:0">選好個案學生，會列出這個班所有授課老師；勾選要發通知的老師，每位老師一份，一張 A4 上下各放一份（中間虛線可裁開）。通知單左上角的小字，是這位老師在辦公室的座位（排-位置）。</p>
+    <div class="set-grid">
+      <label>會議名稱<select id="mtTitle"></select></label>
+      <label id="mtCustomWrap" hidden>自訂會議名稱（完整標題）<input type="text" id="mtCustom" placeholder="例：丹鳳高中 115 學年度特殊生○○會議"></label>
+      <label>個案學生<select id="mtStu"></select></label>
+      <label>會議地點<select id="mtPlace"></select></label>
+      <label id="mtPlaceWrap" hidden>其他地點<input type="text" id="mtPlaceCustom"></label>
+      <label>日期<input type="date" id="mtDate"></label>
+      <label>開始時間<input type="time" id="mtT1"></label>
+      <label>結束時間<input type="time" id="mtT2"></label>
+      <label>主持人／連絡人（特教老師）<input type="text" id="mtHost"></label>
+      <label>分機<input type="text" id="mtExt" inputmode="numeric"></label>
+    </div>
+    <div class="mt-layout">
+      <div>
+        <h2 style="margin:14px 0 4px">受文者</h2>
+        <div id="mtRecs"></div>
+        <details class="set" style="margin-top:8px"><summary>手動加入受文者（例如輔導老師、特教組長）</summary>
+          <div class="set-grid">
+            <label>姓名<input type="text" id="mtAddName"></label>
+            <label>稱呼<select id="mtAddSuf"><option>教師</option><option>導師</option><option>組長</option><option>主任</option></select></label>
+            <label>小字（科目或職稱，選填）<input type="text" id="mtAddSub"></label>
+          </div>
+          <button class="btn sm" id="mtAdd" type="button" style="margin-top:8px">加入</button>
+        </details>
+      </div>
+      <div>
+        <div class="row" style="justify-content:space-between;margin:14px 0 6px"><button class="btn sm" id="mtPrev" type="button">‹ 上一張</button><span id="mtPg" class="info"></span><button class="btn sm" id="mtNext" type="button">下一張 ›</button></div>
+        <div class="pvbox" id="mtBox"></div>
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="btnMt" type="button">下載通知單 PDF</button><span class="info" id="mtInfo"></span><span class="info" id="mtDl"></span></div>
+      </div>
+    </div>
+  </section>
   <footer class="foot"><div class="row" id="footPx" aria-hidden="true"></div><p>約好時間，開一場有效率的會。</p></footer>
 </div>
 
@@ -133,6 +168,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/app.js?v=20261104b"></script>
+<script src="js/app.js?v=20261106"></script>
 </body>
 </html>
