@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扁平風格動態農場 (Flat Design Farm)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f4f8;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .farm-container {
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #87CEEB;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* -----------------------------------
+       CSS 動畫設定
+    ----------------------------------- */
+
+    /* 雲朵飄動 */
+    .cloud-1 { animation: moveCloud 28s linear infinite; }
+    .cloud-2 { animation: moveCloud 40s linear infinite; animation-delay: -15s; }
+    
+    @keyframes moveCloud {
+      0% { transform: translateX(-150px); }
+      100% { transform: translateX(1000px); }
+    }
+
+    /* 熱氣球飄動 */
+    .balloon { animation: floatBalloon 20s ease-in-out infinite alternate; }
+    @keyframes floatBalloon {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-25px); }
+    }
+
+    /* 風車葉片旋轉 */
+    .windmill-blades {
+      transform-origin: 800px 240px;
+      animation: rotateBlades 10s linear infinite;
+    }
+    @keyframes rotateBlades {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* 乳牛散步 */
+    .cow-group {
+      animation: cowWalk 25s ease-in-out infinite alternate;
+    }
+    @keyframes cowWalk {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(120px); }
+      51% { transform: translateX(120px) scaleX(-1); transform-origin: 260px 430px; }
+      100% { transform: translateX(0) scaleX(-1); transform-origin: 260px 430px; }
+    }
+
+    /* 母雞啄地 */
+    .chicken-head {
+      transform-origin: 430px 465px;
+      animation: peck 1.8s ease-in-out infinite;
+    }
+    @keyframes peck {
+      0%, 100% { transform: rotate(0deg); }
+      40%, 60% { transform: rotate(25deg); }
+    }
+
+    /* 小鴨搖搖晃晃行走 */
+    .duck-group {
+      animation: duckWaddle 18s linear infinite;
+    }
+    @keyframes duckWaddle {
+      0% { transform: translateX(900px); }
+      100% { transform: translateX(-150px); }
+    }
+    .duck-body {
+      animation: waddle 0.4s ease-in-out infinite alternate;
+      transform-origin: center bottom;
+    }
+    @keyframes waddle {
+      0% { transform: rotate(-4deg) translateY(0); }
+      100% { transform: rotate(4deg) translateY(-2px); }
+    }
+
+    /* 羊隻吃草搖晃 */
+    .sheep-body {
+      animation: sheepSway 3s ease-in-out infinite alternate;
+      transform-origin: 600px 470px;
+    }
+    @keyframes sheepSway {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(3deg); }
+    }
+
+    /* 植物微風搖晃 */
+    .plant-sway {
+      animation: plantWind 2.5s ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    @keyframes plantWind {
+      0% { transform: skewX(0deg); }
+      100% { transform: skewX(-5deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="farm-container">
+    <svg viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- 太陽光芒樣式 -->
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- 1. 天空與太陽 -->
+      <rect width="960" height="540" fill="#7EC8E3"/>
+      <circle cx="120" cy="100" r="45" fill="#FFE066" />
+      <circle cx="120" cy="100" r="55" fill="#FFE066" opacity="0.3" />
+
+      <!-- 2. 飄動的雲朵與熱氣球 -->
+      <g class="cloud-1" opacity="0.9">
+        <path d="M 0 90 Q 20 70 40 90 Q 60 70 80 90 Q 90 110 70 110 L 10 110 Q -10 110 0 90 Z" fill="#FFFFFF"/>
+      </g>
+      <g class="cloud-2" opacity="0.85">
+        <path d="M 0 130 Q 25 105 50 130 Q 75 105 100 130 Q 115 155 90 155 L 10 155 Q -15 155 0 130 Z" fill="#FFFFFF"/>
+      </g>
+
+      <!-- 熱氣球 -->
+      <g class="balloon" transform="translate(480, 70)">
+        <path d="M 0 0 C -25 -40, 25 -40, 0 0 Z" fill="#FF6B6B" transform="scale(1.2)"/>
+        <path d="M -8 -15 C -4 -30, 4 -30, 8 -15 Z" fill="#4D96FF"/>
+        <rect x="-3" y="10" width="6" height="5" fill="#8D5B4C" />
+        <line x1="-3" y1="5" x2="-3" y2="10" stroke="#555" stroke-width="0.8"/>
+        <line x1="3" y1="5" x2="3" y2="10" stroke="#555" stroke-width="0.8"/>
+      </g>
+
+      <!-- 3. 遠景山丘 (Far Hills) -->
+      <path d="M -50 360 Q 180 230 420 340 T 980 310 L 980 540 L -50 540 Z" fill="#A8E6CF"/>
+      <path d="M 350 340 Q 600 220 1000 340 L 1000 540 L 350 540 Z" fill="#88D8B0"/>
+
+      <!-- 4. 農舍與風車 (Barn & Windmill) -->
+      <!-- 穀倉 -->
+      <g id="barn" transform="translate(640, 240)">
+        <rect x="0" y="40" width="90" height="60" fill="#E63946"/>
+        <polygon points="-5,40 45,5 95,40" fill="#1D3557"/>
+        <polygon points="5,40 45,12 85,40" fill="#F1FAEE"/>
+        <!-- 門 -->
+        <rect x="32" y="60" width="26" height="40" fill="#FFF"/>
+        <rect x="35" y="63" width="20" height="37" fill="#E63946"/>
+        <line x1="35" y1="63" x2="55" y2="100" stroke="#FFF" stroke-width="1.5"/>
+        <line x1="55" y1="63" x2="35" y2="100" stroke="#FFF" stroke-width="1.5"/>
+      </g>
+
+      <!-- 風車 -->
+      <g id="windmill">
+        <!-- 主體 -->
+        <polygon points="785,320 815,320 810,240 790,240" fill="#F4A261"/>
+        <polygon points="787,240 813,240 800,225" fill="#E76F51"/>
+        <circle cx="800" cy="240" r="5" fill="#264653" />
+        <!-- 扇葉 (動態) -->
+        <g class="windmill-blades">
+          <path d="M 800 240 L 793 170 L 807 170 Z" fill="#FFFFFF"/>
+          <path d="M 800 240 L 870 233 L 870 247 Z" fill="#FFFFFF"/>
+          <path d="M 800 240 L 807 310 L 793 310 Z" fill="#FFFFFF"/>
+          <path d="M 800 240 L 730 247 L 730 233 Z" fill="#FFFFFF"/>
+          <circle cx="800" cy="240" r="4" fill="#E76F51"/>
+        </g>
+      </g>
+
+      <!-- 5. 中景與前景地貌 -->
+      <path d="M -20 400 Q 300 320 600 410 T 1000 370 L 1000 540 L -20 540 Z" fill="#74C69D"/>
+      <!-- 田地條紋線條 -->
+      <path d="M 0 460 Q 250 400 500 470" stroke="#52B788" stroke-width="8" fill="none" opacity="0.4"/>
+      <path d="M 0 495 Q 300 430 650 510" stroke="#52B788" stroke-width="12" fill="none" opacity="0.4"/>
+
+      <!-- 前景草地與河流 -->
+      <!-- 小河 -->
+      <path d="M 700 540 C 730 470, 810 430, 850 410 L 900 410 C 850 440, 780 480, 770 540 Z" fill="#4EA8DE"/>
+      
+      <!-- 6. 植物與樹木 (帶擺動動畫) -->
+      <!-- 左側樹木 -->
+      <g class="plant-sway" transform="translate(80, 310)">
+        <rect x="16" y="50" width="8" height="30" fill="#8D6E63" rx="3"/>
+        <circle cx="20" cy="40" r="25" fill="#2D6A4F"/>
+        <circle cx="5" cy="45" r="18" fill="#40916C"/>
+        <circle cx="35" cy="45" r="18" fill="#40916C"/>
+      </g>
+      <!-- 右側小樹 -->
+      <g class="plant-sway" transform="translate(560, 330)">
+        <rect x="10" y="40" width="6" height="25" fill="#8D6E63" rx="2"/>
+        <polygon points="13,10 -5,45 31,45" fill="#52B788"/>
+        <polygon points="13,0 0,30 26,30" fill="#74C69D"/>
+      </g>
+
+      <!-- 7. 動物物種 (物種動態) -->
+
+      <!-- [物種 1] 乳牛 (散步動畫) -->
+      <g class="cow-group">
+        <g id="cow" transform="translate(200, 390)">
+          <!-- 腳 -->
+          <rect x="12" y="35" width="5" height="18" fill="#333"/>
+          <rect x="25" y="35" width="5" height="18" fill="#333"/>
+          <rect x="45" y="35" width="5" height="18" fill="#333"/>
+          <rect x="58" y="35" width="5" height="18" fill="#333"/>
+          <!-- 身體 -->
+          <rect x="8" y="12" width="60" height="28" rx="10" fill="#FFFFFF"/>
+          <!-- 斑紋 -->
+          <path d="M 20 12 Q 30 25 40 12 Z" fill="#333"/>
+          <circle cx="55" cy="26" r="7" fill="#333"/>
+          <path d="M 10 25 Q 15 35 8 35 Z" fill="#333"/>
+          <!-- 尾巴 -->
+          <path d="M 67 18 Q 75 22 73 30" stroke="#333" stroke-width="2" fill="none"/>
+          <!-- 頭部 -->
+          <rect x="0" y="8" width="16" height="20" rx="5" fill="#FFFFFF"/>
+          <rect x="-3" y="18" width="12" height="10" rx="4" fill="#FFC6FF"/> <!-- 鼻子 -->
+          <circle cx="4" cy="14" r="2" fill="#333"/> <!-- 眼睛 -->
+          <!-- 耳朵 -->
+          <ellipse cx="12" cy="7" rx="5" ry="2" fill="#333" transform="rotate(-20 12 7)"/>
+        </g>
+      </g>
+
+      <!-- [物種 2] 綿羊 (吃草微擺動畫) -->
+      <g id="sheep" transform="translate(570, 420)">
+        <g class="sheep-body">
+          <!-- 腳 -->
+          <rect x="8" y="25" width="4" height="15" fill="#4A4A4A"/>
+          <rect x="30" y="25" width="4" height="15" fill="#4A4A4A"/>
+          <!-- 身體 (毛茸茸) -->
+          <circle cx="12" cy="15" r="12" fill="#F8F9FA"/>
+          <circle cx="24" cy="12" r="14" fill="#F8F9FA"/>
+          <circle cx="34" cy="18" r="11" fill="#F8F9FA"/>
+          <!-- 頭部 -->
+          <ellipse cx="4" cy="16" rx="7" ry="5" fill="#4A4A4A"/>
+          <circle cx="3" cy="15" r="1" fill="#FFF"/>
+        </g>
+      </g>
+
+      <!-- [物種 3] 母雞 (啄地動畫) -->
+      <g id="chicken" transform="translate(410, 440)">
+        <!-- 腳 -->
+        <line x1="18" y1="25" x2="15" y2="33" stroke="#F4A261" stroke-width="2"/>
+        <line x1="22" y1="25" x2="24" y2="33" stroke="#F4A261" stroke-width="2"/>
+        <!-- 身體 -->
+        <path d="M 10 18 Q 10 28 22 26 Q 30 24 28 15 Q 20 15 10 18 Z" fill="#F4A261"/>
+        <!-- 尾羽 -->
+        <path d="M 26 16 L 33 10 L 31 20 Z" fill="#E76F51"/>
+        <!-- 頭部 (動態) -->
+        <g class="chicken-head">
+          <circle cx="10" cy="14" r="6" fill="#F4A261"/>
+          <polygon points="4,14 0,16 5,18" fill="#E76F51"/> <!-- 嘴巴 -->
+          <polygon points="10,8 8,4 12,6" fill="#E63946"/> <!-- 雞冠 -->
+          <circle cx="8" cy="13" r="1" fill="#333"/>
+        </g>
+      </g>
+
+      <!-- [物種 4] 鴨子家族 (河邊隊伍移動動畫) -->
+      <g class="duck-group" transform="translate(0, 425)">
+        <!-- 大鴨 -->
+        <g class="duck-body" transform="translate(0, 0)">
+          <ellipse cx="15" cy="12" rx="10" ry="7" fill="#FFB703"/>
+          <circle cx="22" cy="7" r="5" fill="#FFB703"/>
+          <polygon points="26,7 32,8 26,10" fill="#FB8500"/>
+          <circle cx="23" cy="6" r="1" fill="#333"/>
+        </g>
+        <!-- 小鴨 1 -->
+        <g class="duck-body" transform="translate(22, 4) scale(0.65)">
+          <ellipse cx="15" cy="12" rx="10" ry="7" fill="#FFB703"/>
+          <circle cx="22" cy="7" r="5" fill="#FFB703"/>
+          <polygon points="26,7 31,8 26,10" fill="#FB8500"/>
+        </g>
+        <!-- 小鴨 2 -->
+        <g class="duck-body" transform="translate(38, 5) scale(0.5)">
+          <ellipse cx="15" cy="12" rx="10" ry="7" fill="#FFB703"/>
+          <circle cx="22" cy="7" r="5" fill="#FFB703"/>
+          <polygon points="26,7 31,8 26,10" fill="#FB8500"/>
+        </g>
+      </g>
+
+      <!-- 8. 前景飾品 (小草堆) -->
+      <path d="M 150 510 L 153 498 L 158 510 L 163 495 L 167 510" stroke="#2D6A4F" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <path d="M 500 520 L 503 508 L 508 520 L 512 510 L 516 520" stroke="#2D6A4F" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <path d="M 750 490 L 752 482 L 756 490" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+
+</body>
+</html>
