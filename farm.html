@@ -3,482 +3,415 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Morandi Dream Farm｜完整療癒農場</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>莫蘭迪色系動畫農場</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#E9E7DD;overflow:hidden}
-.farm{width:100%;height:100vh;min-height:550px;overflow:hidden}
-svg{width:100%;height:100%;display:block}
-.sun{transform-box:fill-box;transform-origin:center;animation:sun 4s infinite ease-in-out}
-@keyframes sun{50%{transform:scale(1.1);opacity:.8}}
-.cloud{animation:cloud 38s linear infinite}
-.cloud.c2{animation-duration:48s;animation-delay:-18s}
-.cloud.c3{animation-duration:44s;animation-delay:-28s}
-@keyframes cloud{from{transform:translateX(-250px)}to{transform:translateX(1700px)}}
-.bird{animation:bird 18s linear infinite}
-.bird.b2{animation-delay:-8s;animation-duration:23s}
-.bird.b3{animation-delay:-14s;animation-duration:26s}
-@keyframes bird{from{transform:translateX(-100px)}to{transform:translateX(1600px)}}
-.bird-wing{transform-box:fill-box;transform-origin:center;animation:flap .35s infinite alternate}
-@keyframes flap{to{transform:rotate(25deg)}}
-.tree-crown{transform-box:fill-box;transform-origin:bottom center;animation:sway 4s infinite ease-in-out}
-@keyframes sway{50%{transform:rotate(4deg)}}
-.blades{transform-origin:0 0;animation:spin 6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.note{animation:note 3s infinite ease-out}
-.note.n2{animation-delay:1s}
-.note.n3{animation-delay:2s}
-@keyframes note{0%{opacity:0;transform:translateY(15px)}30%{opacity:1}100%{opacity:0;transform:translateY(-50px)}}
-.farmer-arm{transform-box:fill-box;transform-origin:top center;animation:arm 2s infinite ease-in-out}
-@keyframes arm{50%{transform:rotate(15deg)}}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dce8e5}
+svg{display:block;width:100vw;height:100vh}
 
-/* 母雞 */
-.hen-body{transform-box:fill-box;transform-origin:center bottom;animation:henbody 1.5s infinite}
-@keyframes henbody{50%{transform:rotate(-2deg)}}
-.hen-head{transform-box:fill-box;transform-origin:15% 85%;animation:peck 1.5s infinite}
-@keyframes peck{
-0%,35%,100%{transform:rotate(0)}
-55%,75%{transform:rotate(43deg)}
+/* 天空與雲 */
+.cloud{animation:cloudMove 30s ease-in-out infinite alternate}
+.cloud.two{animation-delay:-12s}
+@keyframes cloudMove{
+  from{transform:translateX(-18px)}
+  to{transform:translateX(35px)}
 }
-.hen-wing{transform-box:fill-box;transform-origin:20% 50%;animation:henwing 1.5s infinite}
-@keyframes henwing{50%{transform:rotate(-8deg)}}
-.hen{animation:henwalk 5s infinite ease-in-out}
-@keyframes henwalk{50%{transform:translateX(12px)}}
+.sun-glow{transform-box:fill-box;transform-origin:center;animation:sunPulse 4s ease-in-out infinite}
+@keyframes sunPulse{0%,100%{opacity:.25;transform:scale(.9)}50%{opacity:.55;transform:scale(1.12)}}
+.bird{animation:birdFly 8s ease-in-out infinite alternate}
+@keyframes birdFly{from{transform:translate(0,0)}to{transform:translate(35px,-15px)}}
 
-/* 鴨子 */
-.duck-family{animation:duckwalk 9s infinite ease-in-out}
-@keyframes duckwalk{50%{transform:translateX(-45px)}}
-.duck-body{animation:bob .8s infinite ease-in-out}
-.duck-child:nth-child(2) .duck-body{animation-delay:-.2s}
-.duck-child:nth-child(3) .duck-body{animation-delay:-.4s}
-@keyframes bob{50%{transform:translateY(-5px)}}
-.duck-head{transform-box:fill-box;transform-origin:50% 80%;animation:head 1.2s infinite}
-@keyframes head{50%{transform:rotate(5deg)}}
-.duck-leg{transform-box:fill-box;transform-origin:50% 0;animation:step .45s infinite alternate}
-.duck-leg.second{animation-delay:-.45s}
-@keyframes step{to{transform:rotate(22deg)}}
-
-/* 綿羊 */
-.sheep-one,.sheep-two,.sheep-three{transform-box:fill-box;transform-origin:center bottom;animation:hop 2.8s infinite}
-.sheep-two{animation-delay:.8s}
-.sheep-three{animation-delay:1.6s}
-@keyframes hop{0%,85%,100%{transform:translateY(0)}92%{transform:translateY(-7px)}}
-.sheep-eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
-.sheep-two .sheep-eyes{animation-delay:1s}
-.sheep-three .sheep-eyes{animation-delay:2s}
-@keyframes blink{0%,45%,49%,100%{transform:scaleY(1)}47%{transform:scaleY(.1)}}
-
-/* 馬 */
-.horse-head{transform-box:fill-box;transform-origin:50% 100%;animation:horse 3s infinite}
-@keyframes horse{50%{transform:rotate(-5deg)}}
-.horse-ear{transform-box:fill-box;transform-origin:50% 100%;animation:ear 2s infinite}
-@keyframes ear{50%{transform:rotate(12deg)}}
-.horse-eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
-
-/* 花朵 */
-.flower{transform-box:fill-box;transform-origin:50% 100%;animation:flower 2.5s infinite ease-in-out}
-.flower:nth-child(even){animation-delay:-1s}
-@keyframes flower{50%{transform:rotate(10deg)}}
-
-/* 蝸牛：移動路徑在地面上 */
-.snail{animation:snailmove 40s linear infinite}
-@keyframes snailmove{from{transform:translateX(0)}to{transform:translateX(1000px)}}
-.snail-body{animation:snailbob 2s infinite ease-in-out}
-@keyframes snailbob{50%{transform:translateY(-2px)}}
-
-@media(max-width:700px){
-.farm{min-height:450px}
+/* 彩虹光暈 */
+.rainbow-glow{
+  fill:none;stroke:#fff7d9;stroke-width:25;
+  opacity:.25;filter:url(#glow);
+  animation:rainbowGlow 2.8s ease-in-out infinite;
 }
+@keyframes rainbowGlow{
+  0%,100%{opacity:.18;stroke-width:18}
+  50%{opacity:.75;stroke-width:34}
+}
+
+/* 樹木 */
+.tree-top{transform-box:fill-box;transform-origin:bottom center;animation:treeSway 5s ease-in-out infinite}
+.tree-top.second{animation-delay:-2.5s}
+@keyframes treeSway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.5deg)}}
+
+/* 風車 */
+.blades{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:windmill 8s linear infinite;
+}
+@keyframes windmill{to{transform:rotate(360deg)}}
+
+/* 農夫 */
+.farmer-arm{transform-box:fill-box;transform-origin:top center;animation:wave 2s ease-in-out infinite alternate}
+@keyframes wave{from{transform:rotate(-12deg)}to{transform:rotate(15deg)}}
+.note{animation:noteFloat 2s ease-in-out infinite}
+.note.two{animation-delay:-1s}
+@keyframes noteFloat{0%,100%{opacity:.5;transform:translateY(5px)}50%{opacity:1;transform:translateY(-10px)}}
+
+/* 動物：只做小幅度動作，不改變地面位置 */
+.hen-head{transform-box:fill-box;transform-origin:bottom center;animation:henPeck 1.8s ease-in-out infinite}
+@keyframes henPeck{
+  0%,35%,100%{transform:rotate(0)}
+  55%{transform:rotate(22deg)}
+  72%{transform:rotate(5deg)}
+}
+.duck-body{animation:duckStep 1.2s ease-in-out infinite}
+.duck-body.two{animation-delay:-.3s}
+.duck-body.three{animation-delay:-.6s}
+@keyframes duckStep{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+.sheep-eye{animation:blink 4s infinite}
+@keyframes blink{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
+.sheep-body{animation:sheepBounce 3s ease-in-out infinite}
+.sheep-body.two{animation-delay:-1s}
+.sheep-body.three{animation-delay:-2s}
+@keyframes sheepBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+.horse-ear{animation:earMove 3s ease-in-out infinite alternate}
+@keyframes earMove{to{transform:rotate(5deg)}}
+.snail{animation:snailMove 18s linear infinite alternate}
+@keyframes snailMove{from{transform:translateX(0)}to{transform:translateX(45px)}}
+.flower{transform-box:fill-box;transform-origin:bottom center;animation:flowerSway 3s ease-in-out infinite alternate}
+@keyframes flowerSway{to{transform:rotate(7deg)}}
 </style>
 </head>
 <body>
-<div class="farm">
-<svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
-xmlns="http://www.w3.org/2000/svg">
-
+<svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<g id="cloudShape" fill="#FFFDF6">
-<ellipse cx="0" cy="12" rx="65" ry="22"/>
-<circle cx="-30" cy="-5" r="26"/>
-<circle cx="5" cy="-17" r="34"/>
-<circle cx="37" cy="-2" r="25"/>
-</g>
-<g id="flowerShape">
-<g fill="#E9BDB0">
-<circle cy="-11" r="7"/>
-<circle cx="10" cy="-3" r="7"/>
-<circle cx="6" cy="9" r="7"/>
-<circle cx="-6" cy="9" r="7"/>
-<circle cx="-10" cy="-3" r="7"/>
-</g>
-<circle r="5" fill="#E6CA88"/>
-</g>
+  <linearGradient id="sky" x2="0" y2="1">
+    <stop offset="0" stop-color="#b9d1d0"/>
+    <stop offset="1" stop-color="#e9e6d8"/>
+  </linearGradient>
+  <linearGradient id="grass" x2="0" y2="1">
+    <stop stop-color="#a9b99a"/>
+    <stop offset="1" stop-color="#829b7d"/>
+  </linearGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="9"/>
+  </filter>
+  <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="5"/>
+  </filter>
 </defs>
 
 <!-- 天空 -->
-<rect width="1440" height="900" fill="#DFE9E5"/>
-
-<!-- 彩虹：位於雲朵後方 -->
-<g fill="none" stroke-linecap="round" opacity=".8">
-<path d="M300 420 A190 190 0 0 1 680 420" stroke="#D9A6A0" stroke-width="17"/>
-<path d="M318 420 A172 172 0 0 1 662 420" stroke="#E6C5A2" stroke-width="17"/>
-<path d="M336 420 A154 154 0 0 1 644 420" stroke="#E6D9A8" stroke-width="17"/>
-<path d="M354 420 A136 136 0 0 1 626 420" stroke="#A9BA9F" stroke-width="17"/>
-<path d="M372 420 A118 118 0 0 1 608 420" stroke="#A8C0C1" stroke-width="17"/>
-</g>
+<rect width="1440" height="900" fill="url(#sky)"/>
 
 <!-- 太陽 -->
-<g class="sun">
-<circle cx="1170" cy="145" r="80" fill="#EAD9A8" opacity=".16"/>
-<circle cx="1170" cy="145" r="62" fill="#EAD9A8" opacity=".28"/>
-<circle cx="1170" cy="145" r="45" fill="#E8D4A0"/>
+<circle cx="1190" cy="145" r="92" fill="#f4e7bd" opacity=".22" class="sun-glow"/>
+<circle cx="1190" cy="145" r="55" fill="#f3dba7"/>
+
+<!-- 彩虹 -->
+<g fill="none" stroke-linecap="round">
+  <path class="rainbow-glow" d="M370 475 A350 350 0 0 1 1070 475"/>
+  <path d="M370 475 A350 350 0 0 1 1070 475" stroke="#c98d83" stroke-width="16"/>
+  <path d="M390 475 A330 330 0 0 1 1050 475" stroke="#e4b98d" stroke-width="16"/>
+  <path d="M410 475 A310 310 0 0 1 1030 475" stroke="#e8d69e" stroke-width="16"/>
+  <path d="M430 475 A290 290 0 0 1 1010 475" stroke="#a9b99a" stroke-width="16"/>
+  <path d="M450 475 A270 270 0 0 1 990 475" stroke="#9bb9b8" stroke-width="16"/>
+  <path d="M470 475 A250 250 0 0 1 970 475" stroke="#a5a3b7" stroke-width="16"/>
 </g>
 
-<!-- 雲 -->
-<g class="cloud"><use href="#cloudShape" x="100" y="180"/></g>
-<g class="cloud c2"><use href="#cloudShape" x="600" y="240"/></g>
-<g class="cloud c3"><use href="#cloudShape" x="950" y="210"/></g>
+<!-- 雲朵 -->
+<g class="cloud" fill="#f5f1e7" opacity=".92">
+  <ellipse cx="240" cy="190" rx="82" ry="30"/>
+  <circle cx="195" cy="175" r="35"/>
+  <circle cx="245" cy="150" r="47"/>
+  <circle cx="290" cy="178" r="34"/>
+</g>
+<g class="cloud two" fill="#f5f1e7" opacity=".8">
+  <ellipse cx="900" cy="230" rx="85" ry="28"/>
+  <circle cx="850" cy="215" r="35"/>
+  <circle cx="905" cy="190" r="45"/>
+  <circle cx="950" cy="215" r="32"/>
+</g>
 
 <!-- 飛鳥 -->
-<g class="bird" fill="none" stroke="#7F9387" stroke-width="4" stroke-linecap="round">
-<path d="M0 10 Q12 -6 24 10 Q36 -6 48 10"/>
-</g>
-<g class="bird b2" fill="none" stroke="#7F9387" stroke-width="3">
-<path d="M0 10 Q12 -6 24 10 Q36 -6 48 10"/>
-</g>
-<g class="bird b3" fill="none" stroke="#7F9387" stroke-width="3">
-<path d="M0 10 Q12 -6 24 10 Q36 -6 48 10"/>
+<g class="bird" fill="none" stroke="#657d78" stroke-width="5" stroke-linecap="round">
+  <path d="M570 170q18 -18 35 0q17 -18 35 0"/>
+  <path d="M650 210q13 -13 26 0q13 -13 26 0"/>
 </g>
 
-<!-- 山丘 -->
-<path d="M0 490 Q220 250 460 440 Q710 260 930 450 Q1190 230 1440 440 V900 H0Z" fill="#C6D1BD"/>
-<path d="M0 530 Q250 390 500 520 Q820 350 1080 520 Q1260 400 1440 510 V900 H0Z" fill="#B6C7AC"/>
+<!-- 遠方山丘 -->
+<path d="M0 520 Q180 390 360 510 Q570 370 760 510 Q960 390 1150 500 Q1300 420 1440 500 L1440 680 L0 680Z" fill="#aabbb0"/>
+<path d="M0 565 Q220 460 420 570 Q650 440 850 565 Q1080 450 1280 555 Q1370 510 1440 550 L1440 700 L0 700Z" fill="#c0c6aa"/>
 
 <!-- 草地 -->
-<path d="M0 540 Q330 490 650 545 Q1050 485 1440 540 V900 H0Z" fill="#A2B998"/>
-<path d="M0 640 Q350 580 710 635 Q1120 570 1440 630 V900 H0Z" fill="#8FA989"/>
+<path d="M0 610 Q300 575 580 620 Q900 580 1140 615 Q1320 590 1440 620 L1440 900 L0 900Z" fill="url(#grass)"/>
 
-<!-- 樹木 -->
+<!-- 草地遠景小草 -->
+<g stroke="#718b70" stroke-width="3" fill="none" opacity=".65">
+  <path d="M80 680l-8 -17m8 17l10 -20M350 650l-8 -16m8 16l11 -19M900 660l-8 -18m8 18l11 -19M1320 680l-8 -18m8 18l12 -18"/>
+</g>
+
+<!-- 左側樹木：清楚樹幹與圓潤分層樹冠 -->
 <g>
-<rect x="140" y="390" width="27" height="160" rx="8" fill="#A88A70"/>
-<g class="tree-crown">
-<circle cx="150" cy="370" r="67" fill="#819B80"/>
-<circle cx="105" cy="398" r="39" fill="#91A88B"/>
-<circle cx="194" cy="400" r="42" fill="#A8B99C"/>
+  <path d="M125 645 Q145 560 135 475 L170 475 Q160 570 185 645Z" fill="#8e765f"/>
+  <path d="M151 535 Q105 500 95 465" fill="none" stroke="#8e765f" stroke-width="15" stroke-linecap="round"/>
+  <path d="M155 520 Q195 480 210 450" fill="none" stroke="#8e765f" stroke-width="13" stroke-linecap="round"/>
+  <g class="tree-top">
+    <circle cx="105" cy="430" r="58" fill="#91a88d"/>
+    <circle cx="155" cy="390" r="70" fill="#a7b79a"/>
+    <circle cx="210" cy="435" r="58" fill="#8da48a"/>
+    <circle cx="155" cy="455" r="58" fill="#9db394"/>
+    <circle cx="90" cy="470" r="35" fill="#aab99b"/>
+  </g>
 </g>
-</g>
+
+<!-- 右側樹木 -->
 <g>
-<rect x="1250" y="390" width="30" height="155" rx="8" fill="#A88A70"/>
-<g class="tree-crown">
-<circle cx="1265" cy="365" r="67" fill="#819B80"/>
-<circle cx="1218" cy="400" r="39" fill="#91A88B"/>
-<circle cx="1305" cy="400" r="42" fill="#A8B99C"/>
+  <path d="M1270 645 Q1285 560 1275 475 L1310 475 Q1300 565 1330 645Z" fill="#8e765f"/>
+  <path d="M1290 535 Q1250 500 1235 470" fill="none" stroke="#8e765f" stroke-width="14" stroke-linecap="round"/>
+  <path d="M1295 520 Q1330 480 1350 455" fill="none" stroke="#8e765f" stroke-width="13" stroke-linecap="round"/>
+  <g class="tree-top second">
+    <circle cx="1245" cy="430" r="55" fill="#91a88d"/>
+    <circle cx="1295" cy="390" r="70" fill="#a7b79a"/>
+    <circle cx="1350" cy="435" r="58" fill="#8da48a"/>
+    <circle cx="1295" cy="455" r="58" fill="#9db394"/>
+  </g>
 </g>
+
+<!-- 小屋 -->
+<g>
+  <rect x="45" y="540" width="150" height="105" rx="5" fill="#d4c6aa"/>
+  <path d="M25 545 L120 475 L215 545Z" fill="#a87968"/>
+  <rect x="95" y="575" width="45" height="70" fill="#8d7968"/>
+  <rect x="55" y="560" width="30" height="30" fill="#dce5dc"/>
 </g>
 
 <!-- 風車 -->
-<g transform="translate(1020 400)">
-<path d="M-38 155 L-26 0 H26 L38 155Z" fill="#DCC9B1"/>
-<rect x="-8" y="65" width="16" height="30" fill="#A5B9AE"/>
-<g class="blades">
-<path d="M0 0 L-12 -115 Q0 -128 12 -115Z" fill="#FFF8E9" stroke="#C6B79E" stroke-width="2"/>
-<path d="M0 0 L115 -12 Q128 0 115 12Z" fill="#FFF8E9" stroke="#C6B79E" stroke-width="2"/>
-<path d="M0 0 L12 115 Q0 128 -12 115Z" fill="#FFF8E9" stroke="#C6B79E" stroke-width="2"/>
-<path d="M0 0 L-115 12 Q-128 0 -115 -12Z" fill="#FFF8E9" stroke="#C6B79E" stroke-width="2"/>
-<circle r="12" fill="#A98A71" stroke="#F8F1E5" stroke-width="5"/>
-</g>
+<g transform="translate(1030 400)">
+  <path d="M-20 0 L-35 230 L35 230 L20 0Z" fill="#e6dfca" stroke="#9d9b86" stroke-width="4"/>
+  <g class="blades">
+    <path d="M0 0 L-13 -155 Q0 -175 13 -155Z" fill="#f5f0df" stroke="#9d9b86" stroke-width="3"/>
+    <path d="M0 0 L155 -13 Q175 0 155 13Z" fill="#f5f0df" stroke="#9d9b86" stroke-width="3"/>
+    <path d="M0 0 L13 155 Q0 175 -13 155Z" fill="#f5f0df" stroke="#9d9b86" stroke-width="3"/>
+    <path d="M0 0 L-155 13 Q-175 0 -155 -13Z" fill="#f5f0df" stroke="#9d9b86" stroke-width="3"/>
+  </g>
+  <circle r="17" fill="#9a806b"/>
 </g>
 
 <!-- 馬廄 -->
-<g transform="translate(1190 420)">
-<path d="M-12 75 L90 0 L192 75Z" fill="#A97D70"/>
-<rect y="75" width="180" height="155" fill="#DCCAB4"/>
-<rect x="20" y="88" width="140" height="12" fill="#F3E7D6"/>
-<path d="M37 230 V132 Q37 100 90 100 Q143 100 143 132 V230Z" fill="#89715F"/>
-<path d="M45 230 V132 Q45 108 90 108 Q135 108 135 132 V230" fill="none" stroke="#F4E8D5" stroke-width="7"/>
-
-<!-- 清楚可辨識的馬 -->
-<g class="horse-head">
-<!-- 脖子 -->
-<path d="M58 220 Q50 175 65 130 Q78 92 108 110
-Q135 125 130 180 L115 230Z" fill="#A98165"/>
-
-<!-- 鬃毛 -->
-<path d="M68 150 Q46 105 70 85
-Q77 102 87 103 Q85 79 101 73
-Q100 105 117 111 L124 160"
-fill="#665448"/>
-
-<!-- 頭部 -->
-<path d="M72 110 Q93 82 120 104
-Q143 126 127 168
-Q119 195 97 203
-Q76 198 67 174 Q58 140 72 110Z"
-fill="#B68E70"/>
-
-<!-- 耳朵 -->
-<g class="horse-ear">
-<path d="M76 112 Q57 63 78 69 Q94 82 94 110Z" fill="#98765D"/>
-<path d="M109 105 Q120 62 135 75 Q138 97 124 119Z" fill="#98765D"/>
-<path d="M77 101 L77 81 L87 105Z" fill="#D7A99A"/>
-<path d="M123 103 L130 86 L124 112Z" fill="#D7A99A"/>
-</g>
-
-<!-- 臉 -->
-<ellipse cx="107" cy="168" rx="24" ry="34" fill="#C9A083"/>
-<g class="horse-eyes">
-<ellipse cx="119" cy="139" rx="5" ry="7" fill="#4D4037"/>
-<circle cx="120" cy="137" r="2" fill="white"/>
-</g>
-<ellipse cx="107" cy="192" rx="21" ry="14" fill="#D8B99F"/>
-<circle cx="98" cy="191" r="3" fill="#80675A"/>
-<circle cx="115" cy="191" r="3" fill="#80675A"/>
-<path d="M111 202 Q120 207 127 199" fill="none" stroke="#806052" stroke-width="2"/>
-</g>
-</g>
-
-<!-- 柵欄 -->
-<g fill="#FFFDF5">
-<rect x="0" y="560" width="1440" height="12" rx="5"/>
-<rect x="0" y="605" width="1440" height="12" rx="5"/>
 <g>
-<path d="M40 540 L50 528 L60 540 V650 H40Z"/>
-<path d="M230 540 L240 528 L250 540 V650 H230Z"/>
-<path d="M420 540 L430 528 L440 540 V650 H420Z"/>
-<path d="M610 540 L620 528 L630 540 V650 H610Z"/>
-<path d="M800 540 L810 528 L820 540 V650 H800Z"/>
-<path d="M990 540 L1000 528 L1010 540 V650 H990Z"/>
-<path d="M1180 540 L1190 528 L1200 540 V650 H1180Z"/>
-<path d="M1370 540 L1380 528 L1390 540 V650 H1370Z"/>
-</g>
-</g>
-
-<!-- 農夫：完整頭、身體、雙手、雙腿與鞋子 -->
-<g transform="translate(650 475)">
-<!-- 腿 -->
-<path d="M-20 135 L-23 205" stroke="#718777" stroke-width="18" stroke-linecap="round"/>
-<path d="M20 135 L25 205" stroke="#718777" stroke-width="18" stroke-linecap="round"/>
-<!-- 鞋 -->
-<path d="M-23 200 Q-47 204 -45 218 L-12 218 L-10 205Z" fill="#786A5B"/>
-<path d="M25 200 Q49 204 48 218 L15 218 L15 205Z" fill="#786A5B"/>
-
-<!-- 身體 -->
-<path d="M-32 80 Q-42 90 -37 150 L37 150 Q42 90 32 80Z" fill="#9DAF99"/>
-<path d="M-32 105 L32 105" stroke="#82977F" stroke-width="4"/>
-
-<!-- 頸部 -->
-<rect x="-10" y="60" width="20" height="25" rx="7" fill="#E9C5A4"/>
-
-<!-- 頭 -->
-<ellipse cx="0" cy="45" rx="30" ry="35" fill="#EBC9A8"/>
-<path d="M-29 38 Q-28 5 0 8 Q28 5 29 38 Q5 23 -29 38Z" fill="#92765F"/>
-<ellipse cx="0" cy="15" rx="48" ry="10" fill="#D6C19D"/>
-<path d="M-28 15 Q-26 -15 0 -15 Q26 -15 28 15Z" fill="#E3D0AD"/>
-<path d="M-26 10 Q0 3 26 10" fill="none" stroke="#BBA37D" stroke-width="4"/>
-
-<!-- 五官 -->
-<circle cx="-11" cy="46" r="3" fill="#54493E"/>
-<circle cx="11" cy="46" r="3" fill="#54493E"/>
-<path d="M-6 59 Q0 65 7 59" fill="none" stroke="#A97868" stroke-width="2"/>
-
-<!-- 手臂 -->
-<path d="M-30 95 Q-55 118 -45 145" fill="none" stroke="#E9C5A4" stroke-width="12" stroke-linecap="round"/>
-<path class="farmer-arm" d="M30 95 Q55 100 60 125" fill="none" stroke="#E9C5A4" stroke-width="12" stroke-linecap="round"/>
-<circle cx="-45" cy="145" r="7" fill="#E9C5A4"/>
-<circle cx="60" cy="125" r="7" fill="#E9C5A4"/>
-
-<!-- 音符 -->
-<g class="note n1" fill="#F5E6B9"><text x="65" y="5" font-size="28">♪</text></g>
-<g class="note n2" fill="#F5E6B9"><text x="85" y="40" font-size="26">♫</text></g>
-<g class="note n3" fill="#F5E6B9"><text x="-65" y="30" font-size="25">♪</text></g>
+  <rect x="1135" y="470" width="235" height="180" fill="#b88f78"/>
+  <path d="M1115 480 L1250 390 L1390 480Z" fill="#92796c"/>
+  <path d="M1160 510 H1345 V650 H1160Z" fill="#d1b49a"/>
+  <rect x="1180" y="535" width="145" height="115" fill="#765f53"/>
+  <path d="M1180 535 H1325" stroke="#e1c9ad" stroke-width="10"/>
+  <path d="M1180 575 H1325 M1180 615 H1325" stroke="#b88f78" stroke-width="7"/>
+  <!-- 馬頭 -->
+  <g>
+    <path d="M1225 585 Q1210 545 1220 510 Q1235 475 1280 482 Q1320 488 1320 530 Q1320 570 1295 590Z" fill="#b87958"/>
+    <path d="M1230 510 Q1205 475 1220 450 Q1245 463 1250 495Z" fill="#9e654e"/>
+    <path class="horse-ear" d="M1280 490 Q1290 452 1310 445 Q1315 475 1300 500Z" fill="#9e654e"/>
+    <path d="M1230 500 Q1245 475 1275 480 Q1255 500 1248 520Z" fill="#5e514a"/>
+    <!-- 兩眼：左右都清楚呈現 -->
+    <ellipse cx="1245" cy="525" rx="8" ry="11" fill="#fff8e9"/>
+    <ellipse cx="1247" cy="526" rx="4" ry="7" fill="#423d39"/>
+    <ellipse cx="1290" cy="525" rx="8" ry="11" fill="#fff8e9"/>
+    <ellipse cx="1292" cy="526" rx="4" ry="7" fill="#423d39"/>
+    <path d="M1245 560 Q1270 578 1300 558" fill="none" stroke="#714e42" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="1270" cy="570" rx="23" ry="13" fill="#d69b7b"/>
+    <circle cx="1260" cy="569" r="3" fill="#76564c"/>
+    <circle cx="1280" cy="569" r="3" fill="#76564c"/>
+  </g>
 </g>
 
-<!-- 母雞 -->
-<g class="hen" transform="translate(260 710)">
-<!-- 腳 -->
-<path d="M-20 25 V48 M20 25 V48" stroke="#C18D62" stroke-width="5" stroke-linecap="round"/>
-<path d="M-20 48 L-30 52 M-20 48 L-10 52 M20 48 L10 52 M20 48 L30 52" stroke="#C18D62" stroke-width="4" stroke-linecap="round"/>
-
-<g class="hen-body">
-<ellipse cx="0" cy="0" rx="62" ry="44" fill="#F7EBDD"/>
-<!-- 尾羽 -->
-<path d="M-48 -12 Q-85 -43 -82 -10 Q-73 8 -48 12Z" fill="#E5D4BD"/>
-<path d="M-50 2 Q-80 20 -66 35 Q-49 30 -40 13Z" fill="#E5D4BD"/>
-<!-- 翅膀 -->
-<g class="hen-wing">
-<path d="M-32 -7 Q-5 -38 28 -7 Q38 17 12 26 Q-18 28 -32 -7Z" fill="#E7D5BF"/>
-<path d="M-14 -2 Q0 12 16 10" fill="none" stroke="#CEBBA3" stroke-width="3"/>
+<!-- 白色柵欄：置於遠景，不遮住動物 -->
+<g stroke="#f4f0e5" stroke-width="10" stroke-linecap="round" fill="none">
+  <path d="M0 690 H1440"/>
+  <path d="M0 730 H1440"/>
+  <path d="M80 670 V755 M220 670 V755 M360 670 V755 M500 670 V755 M640 670 V755 M780 670 V755 M920 670 V755 M1060 670 V755 M1200 670 V755 M1340 670 V755"/>
 </g>
 
-<!-- 頭頸獨立轉動 -->
-<g class="hen-head">
-<path d="M28 -20 Q23 -58 45 -68 Q73 -72 80 -43 Q84 -20 57 -8Z" fill="#F7EBDD"/>
-<!-- 雞冠 -->
-<path d="M42 -68 Q31 -82 46 -81 Q51 -96 61 -79 Q72 -94 78 -76 Q82 -64 66 -59Z" fill="#CF8076"/>
-<!-- 嘴 -->
-<path d="M77 -44 L101 -36 L78 -29Z" fill="#DEA56A"/>
-<!-- 眼 -->
-<circle cx="66" cy="-49" r="4" fill="#514940"/>
-<circle cx="67" cy="-50" r="1.5" fill="white"/>
-<!-- 腮紅 -->
-<ellipse cx="68" cy="-29" rx="7" ry="4" fill="#E8B3A5"/>
-<!-- 肉垂 -->
-<path d="M58 -16 Q59 -4 67 -14" fill="#CC8076"/>
+<!-- 農夫 -->
+<g transform="translate(700 535)">
+  <!-- 腿與鞋 -->
+  <path d="M-22 95 L-28 175 L-5 175 L5 110Z" fill="#536b63"/>
+  <path d="M15 100 L22 175 L45 175 L40 95Z" fill="#536b63"/>
+  <path d="M-30 170 Q-50 180 -30 190 H5 L5 176Z" fill="#6e5547"/>
+  <path d="M20 175 Q15 190 35 190 H65 Q70 180 45 174Z" fill="#6e5547"/>
+  <!-- 身體 -->
+  <path d="M-42 5 Q0 -15 42 5 L50 105 Q0 125 -50 105Z" fill="#b77f69"/>
+  <path d="M-35 15 L0 55 L35 15" fill="#e6d8bd"/>
+  <!-- 頭 -->
+  <circle cx="0" cy="-28" r="34" fill="#e7b994"/>
+  <path d="M-35 -35 Q-28 -80 15 -70 Q40 -65 40 -35 Q0 -52 -35 -35Z" fill="#6d5548"/>
+  <circle cx="-12" cy="-25" r="4" fill="#51433d"/>
+  <circle cx="13" cy="-25" r="4" fill="#51433d"/>
+  <path d="M-10 -8 Q0 0 12 -8" fill="none" stroke="#9a6557" stroke-width="3" stroke-linecap="round"/>
+  <!-- 左手 -->
+  <path d="M-42 20 Q-65 45 -65 75" stroke="#e7b994" stroke-width="15" stroke-linecap="round" fill="none"/>
+  <!-- 揮手 -->
+  <g class="farmer-arm">
+    <path d="M40 20 Q68 0 78 -35" stroke="#e7b994" stroke-width="15" stroke-linecap="round" fill="none"/>
+    <circle cx="79" cy="-39" r="10" fill="#e7b994"/>
+  </g>
+  <!-- 草帽 -->
+  <path d="M-48 -52 Q0 -93 48 -52 Q0 -43 -48 -52Z" fill="#d9bd83"/>
+  <ellipse cx="0" cy="-51" rx="53" ry="9" fill="#c6a873"/>
 </g>
+<g class="note" fill="#f6edcf" font-size="34" font-family="serif">
+  <text x="800" y="470">♪</text>
 </g>
-</g>
-
-<!-- 鴨媽媽與小鴨 -->
-<g class="duck-family" transform="translate(840 730)">
-<!-- 媽媽 -->
-<g>
-<g class="duck-body">
-<ellipse cx="0" cy="0" rx="48" ry="34" fill="#D4C29E"/>
-<path d="M-35 -5 Q-5 -35 23 -5 Q32 17 -5 20Z" fill="#C2B08B"/>
-<path d="M-45 -10 L-67 -4 L-45 5Z" fill="#D9A16A"/>
-<path d="M-20 28 L-20 44 M15 28 L15 44" stroke="#C68F60" stroke-width="4" stroke-linecap="round"/>
-<path d="M-20 44 L-29 48 M-20 44 L-11 48 M15 44 L6 48 M15 44 L25 48" stroke="#C68F60" stroke-width="3" stroke-linecap="round"/>
-</g>
-<g class="duck-head">
-<circle cx="42" cy="-48" r="27" fill="#D4C29E"/>
-<path d="M66 -46 L93 -37 L66 -30Z" fill="#D9A16A"/>
-<circle cx="52" cy="-52" r="4" fill="#554B42"/>
-<circle cx="53" cy="-53" r="1.5" fill="white"/>
-<ellipse cx="58" cy="-31" rx="7" ry="4" fill="#E8B5A4"/>
-</g>
+<g class="note two" fill="#f6edcf" font-size="27" font-family="serif">
+  <text x="835" y="440">♫</text>
 </g>
 
-<!-- 小鴨 -->
-<g class="duck-child" transform="translate(90 10) scale(.65)">
-<g class="duck-body">
-<ellipse rx="34" ry="26" fill="#E9DDBD"/>
-<path d="M-22 -5 Q0 -28 21 -5 Q25 15 0 15Z" fill="#E3D2AA"/>
-<path class="duck-leg" d="M-12 19 L-13 34 L-21 38 M-13 34 L-5 38" fill="none" stroke="#D7A36A" stroke-width="4" stroke-linecap="round"/>
-<path class="duck-leg second" d="M12 19 L14 34 L6 38 M14 34 L22 38" fill="none" stroke="#D7A36A" stroke-width="4" stroke-linecap="round"/>
-</g>
-<g class="duck-head">
-<circle cx="15" cy="-27" r="22" fill="#E9DDBD"/>
-<path d="M33 -28 L49 -22 L33 -17Z" fill="#D9A16A"/>
-<circle cx="23" cy="-31" r="3" fill="#554B42"/>
-</g>
-</g>
-
-<g class="duck-child" transform="translate(150 15) scale(.55)">
-<g class="duck-body">
-<ellipse rx="34" ry="26" fill="#E9DDBD"/>
-<path d="M-22 -5 Q0 -28 21 -5 Q25 15 0 15Z" fill="#E3D2AA"/>
-<path class="duck-leg" d="M-12 19 L-13 34 L-21 38 M-13 34 L-5 38" fill="none" stroke="#D7A36A" stroke-width="4" stroke-linecap="round"/>
-<path class="duck-leg second" d="M12 19 L14 34 L6 38 M14 34 L22 38" fill="none" stroke="#D7A36A" stroke-width="4" stroke-linecap="round"/>
-</g>
-<g class="duck-head">
-<circle cx="15" cy="-27" r="22" fill="#E9DDBD"/>
-<path d="M33 -28 L49 -22 L33 -17Z" fill="#D9A16A"/>
-<circle cx="23" cy="-31" r="3" fill="#554B42"/>
-</g>
-</g>
+<!-- 母雞：腳掌直接接觸草地 -->
+<g class="chicken-walk" transform="translate(250 0)">
+  <ellipse cx="0" cy="790" rx="68" ry="10" fill="#5d785d" opacity=".25"/>
+  <ellipse cx="0" cy="748" rx="48" ry="38" fill="#e6d6b8"/>
+  <path d="M-25 748 Q-48 715 -30 690 Q-5 670 22 698 Q38 722 20 750Z" fill="#d5b38c"/>
+  <g class="hen-head">
+    <circle cx="12" cy="690" r="28" fill="#e7c69e"/>
+    <path d="M-5 667 Q-12 645 0 650 Q10 635 18 655 Q32 644 34 666Z" fill="#b97869"/>
+    <circle cx="23" cy="687" r="4" fill="#493e37"/>
+    <path d="M37 695 L55 702 L37 709Z" fill="#d99d68"/>
+  </g>
+  <path d="M-35 742 Q-70 725 -72 750 Q-58 766 -35 755Z" fill="#c9a37d"/>
+  <!-- 翅膀 -->
+  <path d="M-18 720 Q-55 715 -45 745 Q-25 760 0 739Z" fill="#c69d78"/>
+  <path d="M-35 733 Q-25 744 -12 745" fill="none" stroke="#a77f64" stroke-width="3"/>
+  <!-- 腳 -->
+  <path d="M-18 778 L-18 800 M18 778 L18 800" stroke="#b87e58" stroke-width="5" stroke-linecap="round"/>
+  <path d="M-18 800 l-12 5 m12 -5 l10 5 M18 800 l-12 5 m12 -5 l10 5" stroke="#b87e58" stroke-width="4" stroke-linecap="round"/>
 </g>
 
-<!-- 三隻綿羊 -->
-<g>
-<g class="sheep-one" transform="translate(410 790)">
-<g fill="#FAF5EA">
-<circle cx="-30" cy="-18" r="25"/><circle cx="-5" cy="-35" r="27"/>
-<circle cx="25" cy="-25" r="27"/><circle cx="40" cy="-5" r="24"/>
-<circle cx="10" cy="5" r="32"/><circle cx="-25" cy="5" r="25"/>
-<circle cx="-4" cy="-5" r="28"/>
-</g>
-<path d="M-4 -29 Q-27 -32 -30 -6 Q-32 20 -5 23 Q19 21 22 -4 Q22 -27 -4 -29Z" fill="#C4B3A4"/>
-<ellipse cx="-28" cy="-20" rx="12" ry="7" fill="#BBA99A"/>
-<ellipse cx="20" cy="-20" rx="12" ry="7" fill="#BBA99A"/>
-<g class="sheep-eyes"><ellipse cx="-11" cy="-7" rx="3.5" ry="5" fill="#554C45"/><ellipse cx="8" cy="-7" rx="3.5" ry="5" fill="#554C45"/></g>
-<ellipse cx="-2" cy="7" rx="6" ry="4" fill="#997D76"/>
-<path d="M-7 14 Q0 20 7 14" fill="none" stroke="#806D64" stroke-width="2"/>
-<ellipse cx="-16" cy="3" rx="7" ry="4" fill="#E8B8AB"/><ellipse cx="13" cy="3" rx="7" ry="4" fill="#E8B8AB"/>
-<path d="M-20 29 V47 M15 29 V47" stroke="#8E8073" stroke-width="7" stroke-linecap="round"/>
-</g>
-
-<g class="sheep-two" transform="translate(530 790) scale(.88)">
-<g fill="#FFF9EF">
-<circle cx="-30" cy="-18" r="25"/><circle cx="-5" cy="-35" r="27"/>
-<circle cx="25" cy="-25" r="27"/><circle cx="40" cy="-5" r="24"/>
-<circle cx="10" cy="5" r="32"/><circle cx="-25" cy="5" r="25"/>
-<circle cx="-4" cy="-5" r="28"/>
-</g>
-<path d="M-4 -29 Q-27 -32 -30 -6 Q-32 20 -5 23 Q19 21 22 -4 Q22 -27 -4 -29Z" fill="#BDAE9F"/>
-<ellipse cx="-28" cy="-20" rx="12" ry="7" fill="#BDAE9F"/>
-<ellipse cx="20" cy="-20" rx="12" ry="7" fill="#BDAE9F"/>
-<g class="sheep-eyes"><ellipse cx="-11" cy="-7" rx="3.5" ry="5" fill="#554C45"/><ellipse cx="8" cy="-7" rx="3.5" ry="5" fill="#554C45"/></g>
-<ellipse cx="-2" cy="7" rx="6" ry="4" fill="#997D76"/>
-<path d="M-7 14 Q0 20 7 14" fill="none" stroke="#806D64" stroke-width="2"/>
-<ellipse cx="-16" cy="3" rx="7" ry="4" fill="#E8B8AB"/><ellipse cx="13" cy="3" rx="7" ry="4" fill="#E8B8AB"/>
-<path d="M-20 29 V47 M15 29 V47" stroke="#8E8073" stroke-width="7" stroke-linecap="round"/>
+<!-- 母鴨與小鴨：全部固定在草地同一水平 -->
+<g transform="translate(820 0)">
+  <ellipse cx="0" cy="805" rx="105" ry="9" fill="#5d785d" opacity=".25"/>
+  <!-- 母鴨 -->
+  <g class="duck-body">
+    <ellipse cx="0" cy="765" rx="48" ry="30" fill="#d7c8a5"/>
+    <path d="M-20 752 Q-28 720 -8 705 Q15 695 28 720 Q35 740 20 755Z" fill="#d7c8a5"/>
+    <circle cx="9" cy="720" r="4" fill="#463e35"/>
+    <path d="M28 728 L48 735 L28 741Z" fill="#d49a62"/>
+    <path d="M-35 760 Q-5 780 25 760" fill="none" stroke="#b5a17f" stroke-width="4"/>
+    <path d="M-12 790 V805 M15 790 V805" stroke="#b98457" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- 小鴨一 -->
+  <g class="duck-body two">
+    <ellipse cx="75" cy="785" rx="24" ry="17" fill="#e8d99e"/>
+    <circle cx="83" cy="765" r="17" fill="#e8d99e"/>
+    <circle cx="89" cy="763" r="3" fill="#493e37"/>
+    <path d="M98 770 L111 775 L98 780Z" fill="#d49a62"/>
+    <path d="M68 800 V809 M85 800 V809" stroke="#b98457" stroke-width="3"/>
+  </g>
+  <!-- 小鴨二 -->
+  <g class="duck-body three">
+    <ellipse cx="125" cy="800" rx="20" ry="14" fill="#e8d99e"/>
+    <circle cx="130" cy="782" r="14" fill="#e8d99e"/>
+    <circle cx="135" cy="780" r="2.5" fill="#493e37"/>
+    <path d="M143 786 L155 790 L143 794Z" fill="#d49a62"/>
+    <path d="M120 812 V818 M135 812 V818" stroke="#b98457" stroke-width="3"/>
+  </g>
 </g>
 
-<g class="sheep-three" transform="translate(650 790) scale(.8)">
-<g fill="#F8F2E8">
-<circle cx="-30" cy="-18" r="25"/><circle cx="-5" cy="-35" r="27"/>
-<circle cx="25" cy="-25" r="27"/><circle cx="40" cy="-5" r="24"/>
-<circle cx="10" cy="5" r="32"/><circle cx="-25" cy="5" r="25"/>
-<circle cx="-4" cy="-5" r="28"/>
-</g>
-<path d="M-4 -29 Q-27 -32 -30 -6 Q-32 20 -5 23 Q19 21 22 -4 Q22 -27 -4 -29Z" fill="#C7B8A8"/>
-<ellipse cx="-28" cy="-20" rx="12" ry="7" fill="#C7B8A8"/>
-<ellipse cx="20" cy="-20" rx="12" ry="7" fill="#C7B8A8"/>
-<g class="sheep-eyes"><ellipse cx="-11" cy="-7" rx="3.5" ry="5" fill="#554C45"/><ellipse cx="8" cy="-7" rx="3.5" ry="5" fill="#554C45"/></g>
-<ellipse cx="-2" cy="7" rx="6" ry="4" fill="#997D76"/>
-<path d="M-7 14 Q0 20 7 14" fill="none" stroke="#806D64" stroke-width="2"/>
-<ellipse cx="-16" cy="3" rx="7" ry="4" fill="#E8B8AB"/><ellipse cx="13" cy="3" rx="7" ry="4" fill="#E8B8AB"/>
-<path d="M-20 29 V47 M15 29 V47" stroke="#8E8073" stroke-width="7" stroke-linecap="round"/>
-</g>
+<!-- 三隻綿羊：放在前景，尺寸加大 -->
+<g transform="translate(0 0)">
+  <!-- 第一隻 -->
+  <g class="sheep-body">
+    <ellipse cx="400" cy="805" rx="62" ry="12" fill="#536e54" opacity=".25"/>
+    <ellipse cx="400" cy="760" rx="58" ry="43" fill="#f3eee1"/>
+    <circle cx="360" cy="742" r="25" fill="#f3eee1"/>
+    <circle cx="390" cy="725" r="28" fill="#f3eee1"/>
+    <circle cx="420" cy="725" r="27" fill="#f3eee1"/>
+    <circle cx="445" cy="745" r="25" fill="#f3eee1"/>
+    <ellipse cx="400" cy="765" rx="27" ry="31" fill="#d7bca7"/>
+    <path d="M380 785 V815 M420 785 V815" stroke="#796b61" stroke-width="8" stroke-linecap="round"/>
+    <g class="sheep-eye">
+      <ellipse cx="390" cy="757" rx="4" ry="6" fill="#403b37"/>
+      <ellipse cx="410" cy="757" rx="4" ry="6" fill="#403b37"/>
+    </g>
+    <path d="M393 775 Q400 781 407 775" fill="none" stroke="#8c6d61" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- 第二隻 -->
+  <g class="sheep-body two">
+    <ellipse cx="545" cy="810" rx="62" ry="11" fill="#536e54" opacity=".25"/>
+    <ellipse cx="545" cy="770" rx="56" ry="40" fill="#eee9dd"/>
+    <circle cx="507" cy="750" r="25" fill="#eee9dd"/>
+    <circle cx="535" cy="735" r="27" fill="#eee9dd"/>
+    <circle cx="565" cy="740" r="27" fill="#eee9dd"/>
+    <circle cx="583" cy="760" r="24" fill="#eee9dd"/>
+    <ellipse cx="545" cy="773" rx="27" ry="29" fill="#d9bca9"/>
+    <path d="M525 795 V820 M565 795 V820" stroke="#796b61" stroke-width="8" stroke-linecap="round"/>
+    <g class="sheep-eye">
+      <ellipse cx="535" cy="765" rx="4" ry="6" fill="#403b37"/>
+      <ellipse cx="555" cy="765" rx="4" ry="6" fill="#403b37"/>
+    </g>
+    <path d="M538 782 Q545 788 552 782" fill="none" stroke="#8c6d61" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- 第三隻 -->
+  <g class="sheep-body three">
+    <ellipse cx="680" cy="815" rx="60" ry="11" fill="#536e54" opacity=".25"/>
+    <ellipse cx="680" cy="775" rx="54" ry="39" fill="#f5f0e5"/>
+    <circle cx="645" cy="755" r="24" fill="#f5f0e5"/>
+    <circle cx="670" cy="740" r="27" fill="#f5f0e5"/>
+    <circle cx="700" cy="745" r="25" fill="#f5f0e5"/>
+    <circle cx="718" cy="765" r="23" fill="#f5f0e5"/>
+    <ellipse cx="680" cy="778" rx="26" ry="29" fill="#d9bca9"/>
+    <path d="M660 800 V825 M700 800 V825" stroke="#796b61" stroke-width="8" stroke-linecap="round"/>
+    <g class="sheep-eye">
+      <ellipse cx="670" cy="770" rx="4" ry="6" fill="#403b37"/>
+      <ellipse cx="690" cy="770" rx="4" ry="6" fill="#403b37"/>
+    </g>
+    <path d="M673 787 Q680 793 687 787" fill="none" stroke="#8c6d61" stroke-width="3" stroke-linecap="round"/>
+  </g>
 </g>
 
-<!-- 花朵：增加數量與層次 -->
-<g>
-<g class="flower" transform="translate(100 815)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-<path d="M0 36 Q-20 20 -22 38 Q-10 44 0 36Z" fill="#829F7C"/>
+<!-- 花朵 -->
+<g class="flower" transform="translate(160 0)">
+  <path d="M0 820 Q-5 790 0 770" stroke="#657f5f" stroke-width="5" fill="none"/>
+  <g fill="#e6c8b4">
+    <ellipse cx="0" cy="758" rx="9" ry="16"/>
+    <ellipse cx="0" cy="758" rx="9" ry="16" transform="rotate(60 0 770)"/>
+    <ellipse cx="0" cy="758" rx="9" ry="16" transform="rotate(120 0 770)"/>
+    <ellipse cx="0" cy="758" rx="9" ry="16" transform="rotate(180 0 770)"/>
+    <ellipse cx="0" cy="758" rx="9" ry="16" transform="rotate(240 0 770)"/>
+    <ellipse cx="0" cy="758" rx="9" ry="16" transform="rotate(300 0 770)"/>
+  </g>
+  <circle cy="770" r="9" fill="#e5c779"/>
 </g>
-<g class="flower" transform="translate(180 850) scale(.65)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-</g>
-<g class="flower" transform="translate(750 840) scale(.8)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-</g>
-<g class="flower" transform="translate(1080 825)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-</g>
-<g class="flower" transform="translate(1370 835) scale(.8)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-</g>
-<g class="flower" transform="translate(930 870) scale(.55)">
-<use href="#flowerShape"/><path d="M0 10 V55" stroke="#718E70" stroke-width="4"/>
-</g>
-</g>
-
-<!-- 蝸牛：固定貼著地面，y=855 -->
-<g class="snail" transform="translate(30 855)">
-<g class="snail-body">
-<path d="M-5 17 Q0 -2 30 4 Q43 8 52 17 L58 22 H-5Z" fill="#C5C99E"/>
-<path d="M42 9 L44 -5 M52 11 L57 -3" stroke="#B5BD92" stroke-width="3" stroke-linecap="round"/>
-<circle cx="44" cy="-7" r="4" fill="#75846B"/>
-<circle cx="58" cy="-5" r="4" fill="#75846B"/>
-<circle cx="45" cy="-8" r="1.5" fill="white"/>
-<circle cx="59" cy="-6" r="1.5" fill="white"/>
-<path d="M47 17 Q53 21 57 17" fill="none" stroke="#84906D" stroke-width="2"/>
-</g>
-<circle cx="18" cy="5" r="21" fill="#C7A58D" stroke="#A88470" stroke-width="3"/>
-<path d="M18 -10 Q38 -9 32 8 Q27 23 12 16 Q1 10 9 1 Q14 -5 21 0" fill="none" stroke="#A17F69" stroke-width="3"/>
+<g class="flower" transform="translate(1120 0)">
+  <path d="M0 830 Q5 800 0 780" stroke="#657f5f" stroke-width="5" fill="none"/>
+  <g fill="#d9b2a5">
+    <ellipse cy="770" rx="9" ry="16"/>
+    <ellipse cy="770" rx="9" ry="16" transform="rotate(60 0 782)"/>
+    <ellipse cy="770" rx="9" ry="16" transform="rotate(120 0 782)"/>
+    <ellipse cy="770" rx="9" ry="16" transform="rotate(180 0 782)"/>
+    <ellipse cy="770" rx="9" ry="16" transform="rotate(240 0 782)"/>
+    <ellipse cy="770" rx="9" ry="16" transform="rotate(300 0 782)"/>
+  </g>
+  <circle cy="782" r="9" fill="#e5c779"/>
 </g>
 
-<!-- 草叢裝飾 -->
-<g fill="#718D70">
-<path d="M200 850 l-10 -22 l12 14 l5 -26 l5 28Z"/>
-<path d="M900 850 l-10 -22 l12 14 l5 -26 l5 28Z"/>
-<path d="M1150 850 l-10 -22 l12 14 l5 -26 l5 28Z"/>
+<!-- 地面蝸牛 -->
+<g class="snail" transform="translate(950 0)">
+  <ellipse cx="0" cy="850" rx="35" ry="7" fill="#536e54" opacity=".25"/>
+  <path d="M-28 845 Q-10 825 20 840 Q32 845 38 852 L-30 852Z" fill="#d4b18b"/>
+  <circle cx="-3" cy="828" r="23" fill="#b78c70"/>
+  <circle cx="-3" cy="828" r="14" fill="none" stroke="#e1c4a4" stroke-width="4"/>
+  <path d="M20 843 Q35 825 45 830" stroke="#d4b18b" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M35 831 L37 816 M45 831 L50 816" stroke="#d4b18b" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="37" cy="815" r="3" fill="#493e37"/>
+  <circle cx="50" cy="815" r="3" fill="#493e37"/>
 </g>
 
+<!-- 前景草叢 -->
+<g fill="#718d6d">
+  <path d="M20 890q-10 -30 5 -48q-2 28 10 48Z"/>
+  <path d="M40 890q-2 -25 18 -40q-10 25 -5 40Z"/>
+  <path d="M1380 890q-10 -30 5 -48q-2 28 10 48Z"/>
+  <path d="M1400 890q-2 -25 18 -40q-10 25 -5 40Z"/>
+</g>
 </svg>
-</div>
 </body>
 </html>
