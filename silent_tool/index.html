@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>安靜小白板 Quiet Board</title>
+<style>
+:root{
+  --ink:#5d5852; --ink2:#8a847c; --panel:rgba(252,249,244,.93); --line:#ddd5c9;
+  --accent:#8fa79a; --accent2:#7a9487; --warn:#c79a94;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#f3eee6;color:var(--ink);
+  font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif}
+#bg{position:fixed;inset:0;width:100%;height:100%;display:block}
+#board{position:fixed;inset:0;pointer-events:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.ui-hidden .ui{display:none!important}
+
+/* ---------- 上方工具列 ---------- */
+#toolbar{position:fixed;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  pointer-events:none;z-index:5000}
+#toolbar>*{pointer-events:auto}
+.pill{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);
+  border-radius:999px;padding:5px 8px;box-shadow:0 2px 10px rgba(90,80,70,.12);backdrop-filter:blur(6px)}
+.tbtn{border:0;background:transparent;border-radius:999px;padding:7px 12px;font-size:14px;white-space:nowrap}
+.tbtn:hover{background:rgba(143,167,154,.18)}
+.tbtn.primary{background:var(--accent);color:#fff}
+.tbtn.primary:hover{background:var(--accent2)}
+.swatch{width:20px;height:20px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);padding:0}
+.swatch.sel{border-color:var(--ink)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#bbb;margin-right:6px;vertical-align:middle}
+.dot.on{background:#8fb89d}.dot.noisy{background:#d4a29b}
+
+/* ---------- 設定面板 ---------- */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100%;background:var(--panel);
+  border-left:1px solid var(--line);box-shadow:-4px 0 18px rgba(90,80,70,.14);backdrop-filter:blur(8px);
+  transform:translateX(105%);transition:transform .25s ease;z-index:6000;overflow-y:auto;padding:14px 16px 40px}
+#drawer.open{transform:none}
+#drawer h2{font-size:17px;margin:0}
+#drawer .dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#drawer h3{font-size:13px;color:var(--ink2);letter-spacing:.08em;margin:18px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line)}
+.field{margin:10px 0}
+.field label{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:3px}
+.field output{color:var(--ink2);font-variant-numeric:tabular-nums}
+.field small{display:block;color:var(--ink2);font-size:12px;line-height:1.5;margin-top:2px}
+input[type=range]{width:100%;accent-color:var(--accent2)}
+select,input[type=number]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.row2{display:flex;gap:8px;align-items:center}
+.row2 input[type=number]{width:90px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 12px;font-size:13.5px}
+.btn:hover{background:#f2eee7}
+.btn.main{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.main:hover{background:var(--accent2)}
+.btn.full{width:100%}
+.meter{position:relative;height:14px;border-radius:8px;background:#e9e3d9;overflow:hidden;margin:8px 0 4px}
+.meter i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#b7cfc1,#d9c9a3,#d4a29b)}
+.meter b{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--ink);left:55%}
+#micStatus{font-size:12.5px;color:var(--ink2);line-height:1.6;min-height:3em;white-space:pre-line}
+.kbd{font-size:12px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:0 5px}
+
+/* ---------- 便利貼 ---------- */
+.note{border-radius:14px;position:absolute;pointer-events:auto;min-width:270px;min-height:112px;width:280px;height:160px;
+  box-shadow:0 6px 14px rgba(80,70,60,.22),0 1px 2px rgba(80,70,60,.2);
+  resize:both;overflow:hidden;display:flex;flex-direction:column;background:#f3e2bd}
+.note .nh{display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(0,0,0,.055);cursor:grab;
+  touch-action:none;user-select:none;flex:0 0 auto}
+.note .nh:active{cursor:grabbing}
+.note .grip{opacity:.4;font-size:13px;margin-right:2px}
+.note .cols{display:flex;gap:3px;flex:1}
+.note .cols button{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.18);padding:0}
+.note .nb{border:0;background:transparent;font-size:12px;padding:2px 5px;border-radius:5px;opacity:.65}
+.note .nb:hover{background:rgba(0,0,0,.08);opacity:1}
+.note textarea{flex:1;border:0;outline:0;resize:none;background:transparent;padding:8px 10px;
+  font:inherit;font-size:20px;line-height:1.45;color:#4f4a44;width:100%}
+.note textarea::placeholder{color:rgba(80,70,60,.35)}
+
+.note .ttl{display:none;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;padding:0 4px;cursor:grab}
+.note.mini{min-width:150px;max-width:290px;width:auto!important;height:auto!important;min-height:0;resize:none}
+.note.mini textarea,.note.mini .cols,.note.mini .fsb{display:none}
+.note.mini .ttl{display:block}
+.note.focus{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(82vw,1200px)!important;height:min(72vh,680px)!important;
+  resize:none;box-shadow:0 24px 70px rgba(60,50,40,.38)}
+.note.focus .nh{cursor:default}
+#dim{pointer-events:auto;position:fixed;inset:0;background:rgba(70,62,54,.3);backdrop-filter:blur(2px);z-index:6400;display:none}
+#dim.on{display:block}
+/* ---------- 便利貼收納盤 ---------- */
+#tray{position:absolute;pointer-events:auto;width:390px;max-width:94vw;max-height:78vh;display:none;flex-direction:column;background:var(--panel);
+  border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 18px rgba(80,70,60,.2);backdrop-filter:blur(6px);z-index:3600}
+#tray.show{display:flex}
+#tray .ah{display:flex;gap:6px;align-items:center;padding:8px 10px;cursor:grab;touch-action:none;user-select:none;border-bottom:1px dashed var(--line);font-size:14px}
+#tray .ab{padding:8px 10px 12px;overflow:auto}
+.tbtns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tbtns .btn{padding:5px 9px;font-size:12.5px}
+.trow2{display:flex;gap:6px;align-items:flex-start;margin:6px 0;padding:6px;border:1px solid var(--line);border-radius:12px;background:#fffdf9}
+.trow2 .sw{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.2);flex:0 0 auto;margin-top:4px;padding:0}
+.trow2 textarea{flex:1;min-width:0;font:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:8px;padding:5px 7px;resize:vertical;min-height:46px;background:#fff;color:var(--ink)}
+.trow2 .rb{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.trow2 .rb button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 6px;font-size:12px}
+.trow2 .rb button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* ---------- 手繪感外框 ---------- */
+.pill{border-radius:28px}
+#drawer{border-radius:26px 0 0 26px}
+#timer,#album,#tray{border-radius:22px}
+.lv{border-radius:24px}
+.btn,.tbtn{border-radius:14px}
+.chip{border-radius:16px}
+/* ---------- 計時器 ---------- */
+#timer{position:absolute;pointer-events:auto;width:250px;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;box-shadow:0 6px 18px rgba(80,70,60,.2);backdrop-filter:blur(6px);z-index:4000;display:none}
+#timer.show{display:block}
+#timer .th{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;cursor:grab;touch-action:none;
+  user-select:none;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
+#timer .tb{padding:10px 12px 12px}
+#tDisp{font-size:54px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1.1}
+#timer.done #tDisp{color:var(--warn);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.bar{height:6px;background:#e9e3d9;border-radius:4px;overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:100%;background:var(--accent);transition:width .3s linear}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12.5px}
+.chip{white-space:nowrap}
+.chip:hover{background:#f2eee7}
+.trow{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:13px}
+.trow input[type=number]{width:62px;padding:4px 6px}
+.trow .grow{flex:1}
+
+/* ---------- 圖鑑 ---------- */
+#album{position:absolute;pointer-events:auto;width:330px;max-height:82vh;overflow:auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;box-shadow:0 6px 18px rgba(80,70,60,.2);backdrop-filter:blur(6px);z-index:3500;display:none}
+#album.show{display:block}
+.ui-hidden #album:not(.keep){display:none}
+#album .ah{display:flex;gap:6px;align-items:center;padding:8px 10px;cursor:grab;touch-action:none;user-select:none;border-bottom:1px dashed var(--line);font-size:14px}
+#album .ah select{flex:1;min-width:0;font-size:13px;padding:3px 6px}
+#album .ab{padding:8px 10px 12px}
+#aProg{font-size:12.5px;color:var(--ink2);display:flex;justify-content:space-between}
+#aBarWrap{height:6px;background:#e9e3d9;border-radius:4px;overflow:hidden;margin:4px 0 8px}
+#aBar{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+#aGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.acard{background:#fffdf9;border:1px solid var(--line);border-radius:12px;padding:6px 4px 6px;text-align:center;font-size:12.5px}
+.acard canvas{width:84px;height:66px;display:block;margin:0 auto 2px}
+.acard .nm{font-weight:600}.acard .dt{color:var(--ink2);font-size:11px}
+.acard.locked{background:#f1ede6}.acard.locked .nm{color:var(--ink2);letter-spacing:.2em}
+#aHint{font-size:12px;color:var(--ink2);margin-top:8px;line-height:1.5}
+#toast{position:fixed;left:50%;top:70px;transform:translate(-50%,-10px);background:var(--panel);border:1px solid var(--line);
+  border-radius:999px;padding:9px 18px;font-size:15px;box-shadow:0 4px 14px rgba(80,70,60,.2);opacity:0;pointer-events:none;
+  transition:opacity .4s,transform .4s;z-index:8000}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 水滴化開／墨汁暈染 ---------- */
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9500}
+@keyframes bloom{0%{clip-path:circle(0% at var(--bx,30%) var(--by,0%));opacity:.15;filter:blur(10px)}
+  55%{filter:blur(3px);opacity:.9}100%{clip-path:circle(150% at var(--bx,30%) var(--by,0%));opacity:1;filter:blur(0)}}
+@keyframes bloomOut{0%{clip-path:circle(150% at 50% 50%);opacity:1}100%{clip-path:circle(0% at 50% 50%);opacity:0;filter:blur(8px)}}
+.bloom{animation:bloom .75s cubic-bezier(.2,.7,.3,1) both}
+.bloomOut{animation:bloomOut .42s ease-in both}
+/* ---------- 關卡選擇 ---------- */
+#levels{position:fixed;inset:0;z-index:9000;display:none;background:rgba(246,241,233,.95);backdrop-filter:blur(8px);overflow:auto;padding:26px 20px 50px}
+#levels.show{display:block}
+.lv-head{text-align:center;position:relative;max-width:1100px;margin:0 auto}
+.lv-head h1{margin:0;font-size:28px;letter-spacing:.12em}
+.lv-head p{margin:6px 0 0;color:var(--ink2);font-size:14px}
+.lv-total{display:inline-block;margin-top:10px;background:#fffdf9;border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:13.5px}
+.lv-x{position:absolute;right:0;top:0}
+.lv-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:40px 36px;max-width:1100px;margin:34px auto 0}
+.lv{width:252px;background:#fffdf9;border:2px solid var(--line);border-radius:20px;padding:10px 10px 12px;cursor:pointer;position:relative;
+  box-shadow:0 5px 0 #e3dbcd,0 12px 20px rgba(90,80,70,.12);transition:transform .15s,box-shadow .15s;animation:lvIn .5s both}
+.lv:nth-child(odd){transform:rotate(-1.2deg)}.lv:nth-child(even){transform:rotate(1.2deg) translateY(14px)}
+.lv:hover{transform:translateY(-6px) rotate(0)}
+.lv:active{transform:translateY(0) scale(.98);box-shadow:0 2px 0 #e3dbcd}
+.lv.cur{border-color:var(--accent);box-shadow:0 5px 0 #b9cdc2,0 12px 20px rgba(90,80,70,.12)}
+.lv canvas{width:100%;height:auto;aspect-ratio:8/5;border-radius:12px;display:block;border:1px solid var(--line)}
+.lv .no{position:absolute;left:-8px;top:-14px;background:var(--accent);color:#fff;border-radius:999px;padding:3px 13px;font-size:13px;font-weight:700;box-shadow:0 2px 0 var(--accent2)}
+.lv .badge{position:absolute;right:-6px;top:-12px;background:#f1d9a7;color:#6b5a2e;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700}
+.lv .nm{font-size:18px;font-weight:700;margin:10px 2px 4px}
+.lv .meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink2);margin:0 2px}
+.lv .stars{font-size:18px;letter-spacing:2px;color:#d9b45f}
+.lv .stars .off{color:#d8d2c7}
+.lv .pbar{height:6px;background:#e9e3d9;border-radius:4px;overflow:hidden;margin:6px 2px 0}
+.lv .pbar i{display:block;height:100%;background:var(--accent)}
+@keyframes lvIn{from{opacity:0;margin-top:20px}to{opacity:1}}
+/* ---------- 還原隱藏的介面 ---------- */
+#showUi{position:fixed;left:10px;bottom:10px;z-index:7000;opacity:.12;border:0;background:var(--panel);
+  border-radius:50%;width:38px;height:38px;display:none}
+#showUi:hover{opacity:1}
+.ui-hidden #showUi{display:block}
+@media(max-width:640px){#tDisp{font-size:44px}.pill{flex-wrap:wrap;border-radius:18px}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="board"></div>
+<canvas id="fx"></canvas>
+
+<!-- 計時器 -->
+<div id="timer">
+  <div class="th" id="timerHead"><span>⏱ 計時器</span><button class="nb tbtn" id="tClose" style="padding:2px 8px">✕</button></div>
+  <div class="tb">
+    <div id="tDisp">05:00</div>
+    <div class="bar"><i id="tBar"></i></div>
+    <div class="chips" id="tChips"></div>
+    <div class="trow">
+      <input type="number" id="tMin" min="0" max="180" value="5"> 分
+      <input type="number" id="tSec" min="0" max="59" value="0"> 秒
+      <span class="grow"></span>
+      <button class="chip" id="tM1">−1分</button><button class="chip" id="tP1">+1分</button>
+    </div>
+    <div class="trow">
+      <button class="btn main grow" id="tStart">開始</button>
+      <button class="btn" id="tReset">重設</button>
+    </div>
+    <div class="trow"><label><input type="checkbox" id="tSound" checked> 時間到時播放柔和提示音</label></div>
+  </div>
+</div>
+
+<!-- 圖鑑 -->
+<div id="album">
+  <div class="ah" id="albumHead"><span>📖</span><select id="aScene"></select><button class="nb tbtn" id="aClose" style="padding:2px 8px">✕</button></div>
+  <div class="ab">
+    <div id="aProg"></div><div id="aBarWrap"><i id="aBar"></i></div>
+    <div id="aGrid"></div>
+    <div id="aHint"></div>
+  </div>
+</div>
+<div id="tray" class="ui">
+  <div class="ah" id="trayHead"><span>🗂 便利貼收納盤</span><span style="flex:1"></span><button class="nb tbtn" id="trayClose" style="padding:2px 8px">✕</button></div>
+  <div class="ab">
+    <div class="tbtns"><button class="btn main" id="trAdd">＋ 新增一張（先收起）</button><button class="btn" id="trShowAll">全部顯示</button><button class="btn" id="trMiniAll">全部縮小</button><button class="btn" id="trHideAll">全部收起</button><button class="btn" id="trArr">整理排列</button></div>
+    <div class="tbtns"><button class="btn" id="trExport">⬇ 匯出備份</button><button class="btn" id="trImport">⬆ 匯入</button><input type="file" id="trFile" accept="application/json,.json" hidden></div>
+    <small style="color:var(--ink2);font-size:12px;line-height:1.5;display:block;margin-bottom:6px">先在這裡把內容打好；需要時按 👁，便利貼就會像水彩一樣化開出現在白板上。－ 是縮小成標籤，📥 是收回。便利貼上的 ⤢ 可放大投影。</small>
+    <div id="trList"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- 關卡選擇 -->
+<div id="levels" class="ui">
+  <div class="lv-head">
+    <button class="btn lv-x" id="lvClose">✕ 關閉</button>
+    <h1>🗺 選擇場景</h1>
+    <p>保持安靜，就能在每個場景遇見所有的動物與物品</p>
+    <div class="lv-total" id="lvTotal"></div>
+  </div>
+  <div class="lv-grid" id="lvGrid"></div>
+</div>
+
+<!-- 工具列 -->
+<div id="toolbar" class="ui">
+  <div class="pill">
+    <button class="tbtn primary" id="addNote">＋ 便利貼</button>
+    <span id="newColors" style="display:flex;gap:4px"></span>
+  </div>
+  <div class="pill">
+    <button class="tbtn" id="btnTray">🗂 便利貼 <span id="noteCount" style="color:var(--ink2);font-size:12px"></span></button>
+    <button class="tbtn" id="btnLevels">🗺 場景</button>
+    <button class="tbtn" id="btnTimer">⏱ 計時器</button>
+    <button class="tbtn" id="btnAlbum">📖 圖鑑 <span id="albumCount" style="color:var(--ink2);font-size:12px"></span></button>
+    <button class="tbtn" id="btnMic"><span class="dot" id="micDot"></span>麥克風</button>
+    <button class="tbtn" id="btnSettings">⚙ 設定</button>
+    <button class="tbtn" id="btnFull" title="全螢幕">⛶</button>
+    <button class="tbtn" id="btnHide" title="隱藏工具列（快捷鍵 H）">🙈</button>
+  </div>
+</div>
+<button id="showUi" title="顯示工具列（H）">👁</button>
+
+<!-- 設定面板 -->
+<aside id="drawer" class="ui">
+  <div class="dh"><h2>⚙ 設定</h2><button class="btn" id="closeDrawer">關閉</button></div>
+
+  <h3>背景場景</h3>
+  <button class="btn main full" id="btnLevels2">🗺 選擇場景：<span id="curSceneName"></span></button>
+  <select id="selScene" style="display:none"></select>
+
+  <h3>麥克風與安靜偵測</h3>
+  <button class="btn main full" id="micStart">🎤 啟用麥克風</button>
+  <div class="meter"><i id="lvl"></i><b id="thrMark"></b></div>
+  <div id="micStatus">尚未啟用麥克風（目前為示範狀態，畫面會維持熱鬧）。</div>
+
+  <div class="field">
+    <label>安靜門檻（低於此值才算安靜）<output id="oThr"></output></label>
+    <input type="range" id="rThr" min="20" max="90" step="1">
+    <small>單位為「約 dB」（相對值，會依電腦麥克風而不同）。</small>
+  </div>
+  <button class="btn full" id="calib">以「目前環境音」設定門檻（+8）</button>
+  <div class="field">
+    <label>麥克風校正<output id="oCal"></output></label>
+    <input type="range" id="rCal" min="-30" max="30" step="1">
+    <small>若同學小聲說話就超過門檻，可往負的方向調。</small>
+  </div>
+  <div class="field">
+    <label>持續吵雜多久後，畫面才變單調</label>
+    <div class="row2"><input type="number" id="nNoise" min="1" max="999" step="1">
+      <select id="uNoise"><option value="1">秒</option><option value="60">分鐘</option></select></div>
+    <small>短暫的聲音（咳嗽、突然大叫）不會立刻有反應，避免學生把它當成即時互動遊戲。吵雜聲斷斷續續時會慢慢累積。</small>
+  </div>
+  <div class="field">
+    <label>持續安靜多久後，動物才回來</label>
+    <div class="row2"><input type="number" id="nRec" min="1" max="999" step="1">
+      <select id="uRec"><option value="1">秒</option><option value="60">分鐘</option></select></div>
+  </div>
+  <div class="field">
+    <label>預覽模式（不依麥克風）</label>
+    <select id="selMode" style="width:100%">
+      <option value="auto">自動（依麥克風）</option>
+      <option value="quiet">預覽：安靜（多彩熱鬧）</option>
+      <option value="noisy">預覽：吵雜（單調淡化）</option>
+    </select>
+  </div>
+
+  <h3>動物／物體的活躍度</h3>
+  <div class="field"><label>移動速度<output id="oSpd"></output></label><input type="range" id="rSpd" min="0.2" max="3" step="0.1"></div>
+  <div class="field"><label>同時出現的種類上限<output id="oDiv"></output></label><input type="range" id="rDiv" min="1" max="13" step="1"><small>只會出現「已收集到」的物種；調低時，較早收集的物種會先退場。</small></div>
+  <div class="field"><label>數量（密度）<output id="oDen"></output></label><input type="range" id="rDen" min="0.4" max="2.5" step="0.1"></div>
+
+  <h3>圖鑑</h3>
+  <div class="field"><label style="justify-content:flex-start;gap:6px"><input type="checkbox" id="cKeep"> 保持開啟圖鑑</label>
+    <small>勾選後，圖鑑視窗會一直顯示在畫面上（按 H 隱藏工具列時也不會消失，重新開啟網頁也會自動展開）。</small></div>
+  <div class="field"><label style="justify-content:flex-start;gap:6px"><input type="checkbox" id="cToast"> 發現新物種時顯示提示</label></div>
+  <div class="field"><label>新朋友多久來一次（需保持安靜）</label>
+    <div class="row2"><input type="number" id="nArrMin" min="1" max="60"> ～ <input type="number" id="nArrMax" min="1" max="60"> 分鐘</div>
+    <small>連續安靜累積到這段時間（在最短與最長之間隨機）就會有一種新的動物或物品來訪，並收進圖鑑；達到「持續吵雜」設定時會重新計時。需啟用麥克風並使用「自動」模式才會累積。</small></div>
+  <button class="btn full" id="arrNow">🧪 測試：立刻讓下一位新朋友出現</button>
+  <button class="btn full" id="aReset" style="margin-top:8px">重設圖鑑（全部變回未知）</button>
+
+  <h3>小提醒</h3>
+  <div class="field"><small>按 <span class="kbd">H</span> 可隱藏／顯示所有按鈕與設定，只留下便利貼與計時器，避免學生看到即時音量。便利貼與設定會自動存在這台電腦的瀏覽器裡。</small></div>
+  <button class="btn full" id="clearNotes">清除全部便利貼</button>
+</aside>
+
+<script>
+(() => {
+'use strict';
+/* =====================================================================
+   工具
+   ===================================================================== */
+const $ = (s, el = document) => el.querySelector(s);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('qb.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('qb.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+/* =====================================================================
+   設定
+   ===================================================================== */
+const S = Object.assign({
+  scene: 'guinea', thr: 55, calib: 0,
+  noiseVal: 5, noiseUnit: 1, recVal: 10, recUnit: 1,
+  speed: 1, diversity: 13, density: 1, mode: 'auto', noteColor: 0, albumKeep: false, albumToast: true, arriveMin: 3, arriveMax: 5
+}, store.get('settings', {}));
+if (S.ver !== 2) { S.diversity = 13; S.ver = 2; }
+const saveSettings = () => store.set('settings', S);
+
+/* =====================================================================
+   手繪風繪圖工具（細線、不工整、水彩暈染）
+   ===================================================================== */
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const rgbCache = {};
+function rgb(h) { return rgbCache[h] || (rgbCache[h] = (n => [n >> 16 & 255, n >> 8 & 255, n & 255])(parseInt(h.slice(1), 16))); }
+function mix(a, b, t) { const A = rgb(a), B = rgb(b);
+  return `rgb(${(A[0] + (B[0] - A[0]) * t) | 0},${(A[1] + (B[1] - A[1]) * t) | 0},${(A[2] + (B[2] - A[2]) * t) | 0})`; }
+const punchC = {};
+function punch(h) {                                   // 扁平插畫的色彩：略提高飽和度，讓色塊乾淨明確
+  if (h[0] !== '#' || h.length !== 7) return h; if (punchC[h]) return punchC[h];
+  const c = rgb(h), l = .3 * c[0] + .59 * c[1] + .11 * c[2], f = .8, o = c.map(v => clamp(Math.round(l + (v - l) * f), 0, 255));
+  return punchC[h] = '#' + o.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+function blob(cx, cy, rx, ry, R, wob = .1, n = 9) {          // 圓潤的橢圓（極輕微的蛋形），沒有抖動
+  const p = [], N = Math.max(16, n * 2), tilt = (R() - .5) * .16, a2 = R() * 6.283, e = Math.min(.1, .03 + wob * .25), cs = Math.cos(tilt), sn = Math.sin(tilt);
+  for (let i = 0; i < N; i++) { const a = i / N * 6.283, k = 1 + e * Math.cos(a - a2), x = Math.cos(a) * rx * k, y = Math.sin(a) * ry * k; p.push([cx + x * cs - y * sn, cy + x * sn + y * cs]); }
+  return p;
+}
+function path(g, pts, closed) {
+  const n = pts.length; g.beginPath();
+  if (closed) {
+    const m = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const s = m(pts[n - 1], pts[0]); g.moveTo(s[0], s[1]);
+    for (let i = 0; i < n; i++) { const p = pts[i], q = m(p, pts[(i + 1) % n]); g.quadraticCurveTo(p[0], p[1], q[0], q[1]); }
+    g.closePath();
+  } else {
+    g.moveTo(pts[0][0], pts[0][1]);
+    if (n === 2) { g.lineTo(pts[1][0], pts[1][1]); return; }
+    for (let i = 1; i < n - 1; i++) { const p = pts[i], q = pts[i + 1];
+      if (i === n - 2) g.quadraticCurveTo(p[0], p[1], q[0], q[1]);
+      else g.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); }
+  }
+}
+const jit = (pts, R, a) => pts.map(p => [p[0] + (R() - .5) * a, p[1] + (R() - .5) * a]);
+/* 水彩暈染：①溢出線外的淡色暈開 ②主色塊 ③顏料沉澱/水痕（深淡斑塊） ④邊緣積色（深色邊） */
+const shCache = {};
+function hexMix(a, b, t) { const A = rgb(a), B = rgb(b); return '#' + A.map((x, i) => Math.round(x + (B[i] - x) * t).toString(16).padStart(2, '0')).join(''); }
+const shade = (h, to, t) => shCache[h + to + t] || (shCache[h + to + t] = hexMix(h, to, t));
+function clear(c) { return c[0] === '#' ? 'rgba(' + rgb(c).join(',') + ',0)' : c.replace('rgb(', 'rgba(').replace(')', ',0)'); }
+/* 扁平色塊：乾淨的純色（大塊的才有極淡的上亮下深漸層），邊界俐落，邊緣只用同色系稍深的細線分開形狀 */
+function wash(g, W, pts, color, R, o) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const p of pts) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; }
+  const sz = Math.max(x1 - x0, y1 - y0, 1), land = !!(o && o.top), base = W.c(color);
+  g.save(); g.lineJoin = 'round'; path(g, pts, true);
+  if (!land && sz > 30 && o && o.grad) { const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, W.c(shade(color, '#ffffff', .14))); gr.addColorStop(1, base); g.fillStyle = gr; } else g.fillStyle = base;
+  g.globalAlpha = W.a; g.fill();
+  if (!land && o && o.edge) { g.lineWidth = Math.max(1, W.lw * 1.15); g.strokeStyle = W.c(shade(color, '#2b2536', .2)); g.globalAlpha = W.a * .5; g.stroke(); }
+  g.restore();
+}
+/* 紙張顆粒：整張畫面最後疊一層，增加水彩紙質感 */
+let paperPat = null;
+function paperPattern() {
+  if (paperPat) return paperPat;
+  const n = 256, c2 = document.createElement('canvas'); c2.width = c2.height = n; const x = c2.getContext('2d'), im = x.createImageData(n, n), d = im.data;
+  for (let i = 0; i < n * n; i++) { const v = Math.random(), o = i * 4;
+    if (v < .16) { d[o] = 120; d[o + 1] = 105; d[o + 2] = 92; d[o + 3] = Math.random() * 16; }
+    else if (v > .86) { d[o] = d[o + 1] = d[o + 2] = 255; d[o + 3] = Math.random() * 26; } }
+  x.putImageData(im, 0, 0); return paperPat = g.createPattern(c2, 'repeat');
+}
+/* ---------- 手繪筆觸引擎：粗細不一的墨線（起筆收筆漸細、飛白、斷線、破框）+ 溢出線外的水彩 ---------- */
+function quadSample(out, a, c, b) {
+  const d = Math.hypot(c[0] - a[0], c[1] - a[1]) + Math.hypot(b[0] - c[0], b[1] - c[1]), m = Math.max(2, Math.min(24, Math.ceil(d / 3.2)));
+  for (let i = 0; i < m; i++) { const t = i / m, u = 1 - t; out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); }
+}
+const mid2 = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+function sampleOpen(pts) {
+  const n = pts.length, out = [];
+  if (n === 2) { for (let i = 0; i <= 6; i++) out.push([lerp(pts[0][0], pts[1][0], i / 6), lerp(pts[0][1], pts[1][1], i / 6)]); return out; }
+  let s = pts[0];
+  for (let i = 1; i < n - 1; i++) { const c = pts[i], e = i === n - 2 ? pts[n - 1] : mid2(c, pts[i + 1]); quadSample(out, s, c, e); s = e; }
+  out.push(pts[n - 1]); return out;
+}
+function sampleLoop(pts) {
+  const n = pts.length, P = []; let s = mid2(pts[n - 1], pts[0]);
+  for (let i = 0; i < n; i++) { const c = pts[i], e = mid2(c, pts[(i + 1) % n]); quadSample(P, s, c, e); s = e; }
+  const D = [0]; for (let i = 1; i < P.length; i++) D.push(D[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  return { P, D, L: D[D.length - 1] + Math.hypot(P[0][0] - P[P.length - 1][0], P[0][1] - P[P.length - 1][1]) };
+}
+/* 一條粗細變化的墨線：pk=最粗的位置（不對稱），兩端細 */
+function ribbon(g, W, P, wm, al, pk) {
+  const m = P.length; if (m < 2) return;
+  const nx = [], ny = [], hw = [];
+  for (let i = 0; i < m; i++) {
+    const a = P[Math.max(i - 1, 0)], b = P[Math.min(i + 1, m - 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1;
+    nx.push(-dy / l); ny.push(dx / l);
+    const t = i / (m - 1), u = t < pk ? t / pk * .5 : .5 + (t - pk) / (1 - pk) * .5;
+    hw.push(W.lw * wm * .5 * (.08 + .92 * Math.pow(Math.sin(Math.PI * u), .75)));
+  }
+  g.beginPath(); g.moveTo(P[0][0] + nx[0] * hw[0], P[0][1] + ny[0] * hw[0]);
+  for (let i = 1; i < m; i++) g.lineTo(P[i][0] + nx[i] * hw[i], P[i][1] + ny[i] * hw[i]);
+  for (let i = m - 1; i >= 0; i--) g.lineTo(P[i][0] - nx[i] * hw[i], P[i][1] - ny[i] * hw[i]);
+  g.closePath(); g.fillStyle = W.ink; g.globalAlpha = al * .8; g.fill();
+}
+/* 一筆：後段化成飛白（斷斷續續、越來越細） */
+function inkStroke(g, W, P, wm, al, pk, dry) {
+  const m = P.length;
+  if (m > 16 && dry) {
+    ribbon(g, W, P.slice(0, Math.floor(m * .74) + 1), wm, al, pk);
+    ribbon(g, W, P.slice(Math.floor(m * .8), Math.floor(m * .9)), wm * .55, al * .7, .5);
+    ribbon(g, W, P.slice(Math.floor(m * .94)), wm * .4, al * .55, .5);
+  } else ribbon(g, W, P, wm, al, pk);
+}
+/* 線：粗細一致、圓頭的線條（腿、鬚、草、柵欄…），可指定顏色 */
+function line(g, W, pts, R, closed = false, w = 1, col) {
+  g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = W.lw * 2.2 * w; g.strokeStyle = col ? W.c(col) : W.c('#7a6c6b'); g.globalAlpha = W.a * .95;
+  path(g, pts, closed); g.stroke(); g.restore();
+}
+function shape(g, W, pts, color, R, opt) { if (color) wash(g, W, pts, color, R, opt); else line(g, W, pts, R, true, .9); }
+/* 建築用多邊形：直邊、轉角略圓 */
+function poly(pts, R) {
+  const out = [], n = pts.length;
+  for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n];
+    out.push([a[0] + (b[0] - a[0]) * .09, a[1] + (b[1] - a[1]) * .09], [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], [a[0] + (b[0] - a[0]) * .91, a[1] + (b[1] - a[1]) * .91]); }
+  return out;
+}
+/* 大地形：頂端是一條平滑的邊，其餘延伸到畫面外 */
+function landPts(top, bottom) { const a = top[0], b = top[top.length - 1]; return top.concat([[b[0] + 500, b[1]], [b[0] + 500, bottom + 500], [(a[0] + b[0]) / 2, bottom + 500], [a[0] - 500, bottom + 500], [a[0] - 500, a[1]]]); }
+function dot(g, W, x, y, r) { g.save(); g.globalAlpha = W.a; g.fillStyle = W.ink; g.beginPath(); g.ellipse(x, y, r * 1.0, r * 1.3, 0, 0, 6.283); g.fill(); g.restore(); }
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+/* 樹：kind 0 = 三層松樹，kind 1 = 圓圓的闊葉樹 */
+function drawTree(g, W, R, kind, cols) {
+  cols = cols || (kind === 1 ? ['#8fcf86', '#76bf7c'] : ['#2f8f68', '#277f5c']);
+  shape(g, W, poly([[-5, 0], [-5, -30], [5, -30], [5, 0]], R), '#b88a64', R, { noGrad: 1 });
+  if (kind === 1) { shape(g, W, blob(0, -62, 32, 30, R, 0, 12), cols[0], R); shape(g, W, blob(-20, -48, 20, 18, R, 0, 10), cols[1], R); shape(g, W, blob(21, -50, 20, 18, R, 0, 10), cols[1], R); return; }
+  for (let i = 0; i < 3; i++) { const b = -22 - i * 26, hw = 34 - i * 7; shape(g, W, poly([[-hw, b], [0, b - 44], [hw, b]], R), cols[i % 2], R, { noGrad: 1 }); }
+}
+/* 雲朵：白色圓滾滾的扁平雲，底部平整 */
+function drawCloud(g, W, R, w, h, tint) {
+  const k = .9 + R() * .2, c = W.c('#ffffff');
+  g.save(); g.globalAlpha = W.a * .96; g.fillStyle = c; g.beginPath();
+  g.arc(-w * .24, -h * .08, h * .62 * k, 0, 6.283); g.moveTo(w * .02 + h * .86, -h * .36); g.arc(w * .02, -h * .36, h * .86 * k, 0, 6.283);
+  g.moveTo(w * .3 + h * .56, -h * .05); g.arc(w * .3, -h * .05, h * .56, 0, 6.283); g.fill();
+  rr(g, -w * .46, -h * .3, w * .92, h * .6, h * .3); g.fill(); g.restore();
+}
+
+/* =====================================================================
+   動物／物體圖庫（每個 draw 以原點為中心、朝右(+x)，單位約 1 = 1px）
+   c.clock 會隨「安靜程度」前進：吵雜時時間停止 → 動作停住
+   ===================================================================== */
+const PINK = '#f6a9ba', PEACH = '#f6b25e';
+
+
+/* 物種定義：n=基本數量 band=垂直出現範圍(畫面比例) speed=水平速度px/s size=大小範圍
+   wave=[振幅,頻率]上下擺動 hop=[高度,頻率]跳躍 vy=垂直漂移 sway=[振幅,頻率]左右擺動 */
+/* ===== 可愛扁平物種（大圓頭、閃亮小眼睛、粉紅腮紅、短圓腿） ===== */
+const FL = { noGrad: 1 }, NE = { noGrad: 1, noEdge: 1 }, DK = '#46393a', ORG = '#f59a3a';
+const tint = (c, k) => shade(c, '#ffffff', k), deep = (c, k) => shade(c, '#5a4650', k);
+function E(g, W, R, x, y, rx, ry, col, o) { shape(g, W, blob(x, y, rx, ry, R, 0, 12), col, R, o || FL); }
+function eye(g, W, x, y, r) { r = r || 1.8; g.save(); g.globalAlpha = W.a; g.fillStyle = W.ink; g.beginPath(); g.ellipse(x, y, r * .78, r * 1.1, 0, 0, 6.283); g.fill(); g.restore(); }
+function cheek(g, W, R, x, y, r) { r = r || 2.4; E(g, W, R, x, y, r, r * .62, '#f4a0b4', NE); }
+function smile(g, W, R, x, y, w) { w = w || 2.4; line(g, W, [[x - w, y - .3], [x, y + w * .55], [x + w, y - .3]], R, false, .4); }
+function limb(g, W, R, x, y0, y1, hw, col) { E(g, W, R, x, (y0 + y1) / 2, hw, (y1 - y0) / 2, col); }
+function star5(cx, cy, ro, ri, rot) { const p = []; for (let i = 0; i < 10; i++) { const a = rot + i * Math.PI / 5 - Math.PI / 2, r = i % 2 ? ri : ro; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return p; }
+
+function drawSeed(g, W, c, R) {                        // 蒲公英種子：小降落傘
+  line(g, W, [[0, 20], [0, 3]], R, false, .5, '#c5b49f');
+  for (let i = 0; i < 9; i++) { const a = -3.05 + i * .36, x = Math.cos(a) * 14, y = 3 + Math.sin(a) * 14; line(g, W, [[0, 3], [x, y]], R, false, .3, '#d8cbe6'); E(g, W, R, x, y, 2.1, 2.1, '#f6f0ff', NE); }
+  E(g, W, R, 0, 3, 3, 3, '#e6dcf3', NE); E(g, W, R, 0, 22, 2.2, 3.3, '#b88a62');
+}
+function drawSheep(g, W, c, R) {
+  const t = c.clock * 7, w = '#fdfaf2', dk = '#6e4f44';
+  for (const [x, ph] of [[-10, 0], [-3, 1.5], [8, 3], [14, 4.5]]) limb(g, W, R, x, 14, 25 - Math.max(0, Math.sin(t + ph)) * 2, 2.8, dk);
+  for (const [x, y, r] of [[-14, 0, 10], [-5, -7, 11], [7, -6, 11], [14, 1, 10], [-8, 8, 11], [5, 8, 11]]) E(g, W, R, x, y, r, r, w, FL);
+  E(g, W, R, 0, 1, 13, 10, w, NE);
+  E(g, W, R, 22, 1, 8.5, 9, dk); E(g, W, R, 15, -6, 5.5, 3, dk); E(g, W, R, 21, -9, 6.5, 4.5, w, FL);
+  E(g, W, R, 23.5, -1, 2.3, 2.3, '#ffffff', NE); dot(g, W, 24, -.8, 1.1); cheek(g, W, R, 23, 6, 2.2);
+}
+function drawCow(g, W, c, R) {
+  const t = c.clock * 6, wh = '#fdfdfb', bk = '#3a3740';
+  for (const [x, ph] of [[-13, 0], [-5, 1.6], [8, 3.2], [16, 4.8]]) { limb(g, W, R, x, 12, 25 - Math.max(0, Math.sin(t + ph)) * 1.8, 3.2, wh); E(g, W, R, x, 25 - Math.max(0, Math.sin(t + ph)) * 1.8, 3.4, 2, bk, NE); }
+  line(g, W, [[-24, -4], [-29, 4], [-27, 12]], R, false, .5, bk); E(g, W, R, -27, 13, 2.4, 3.4, bk, NE);
+  E(g, W, R, -2, 0, 24, 14.5, wh); E(g, W, R, -10, -5, 8, 6, bk, NE); E(g, W, R, 6, 4, 6, 5, bk, NE); E(g, W, R, -15, 6, 4, 3, bk, NE);
+  E(g, W, R, -6, 13, 4.5, 3.2, '#f6a9ba', NE);
+  E(g, W, R, 22, -4, 10.5, 10, wh); E(g, W, R, 15, -10, 5.2, 3, bk); E(g, W, R, 20, -15, 2, 3.4, '#f3e3b8'); E(g, W, R, 26, -15, 2, 3.4, '#f3e3b8');
+  E(g, W, R, 27, 2, 6.8, 5, '#f6a9ba'); dot(g, W, 25, 2, .9); dot(g, W, 29, 2, .9); eye(g, W, 22, -6, 1.9); E(g, W, R, 17, -5, 4, 4.2, bk, NE);
+}
+function drawCat(g, W, c, R) {
+  const [a, b] = c.pal, t = c.clock * 7, sw = Math.sin(c.clock * 2.4) * 4;
+  line(g, W, [[-18, 5], [-29, 1 + sw], [-27, -12 + sw]], R, false, 2.2, a);
+  for (const [x, ph] of [[-10, 0], [-3, 1.5], [7, 3], [12, 4.5]]) limb(g, W, R, x, 11, 20 - Math.max(0, Math.sin(t + ph)) * 1.5, 3, a);
+  E(g, W, R, -2, 3, 19, 11, a); for (const x of [-10, -3, 4]) E(g, W, R, x, -2, 1.7, 5, b, NE);
+  shape(g, W, poly([[7, -12], [9, -23], [16, -14]], R), a, R, FL); shape(g, W, poly([[16, -14], [22, -23], [25, -11]], R), a, R, FL);
+  E(g, W, R, 16, -5, 11, 9.5, a); E(g, W, R, 18, -1, 6, 4, tint(a, .6), NE);
+  eye(g, W, 12.5, -6, 1.8); eye(g, W, 21, -6, 1.8); shape(g, W, poly([[16, -3.5], [18, -3.5], [17, -2]], R), '#f08ca3', R, NE); cheek(g, W, R, 10, -1.5, 2.2); cheek(g, W, R, 23, -1.5, 2.2);
+  line(g, W, [[22, -2], [29, -3]], R, false, .22, deep(a, .5)); line(g, W, [[22, -.5], [29, 1]], R, false, .22, deep(a, .5));
+}
+function drawTractor(g, W, c, R) {
+  const t = c.clock * 5, red = '#ee6f5d', dk = '#4a4650';
+  shape(g, W, poly([[2, -4], [26, -4], [26, 10], [2, 10]], R), red, R, FL); E(g, W, R, 26, 3, 1.8, 7, '#f6c85a', NE);
+  shape(g, W, poly([[-22, -22], [2, -22], [2, 6], [-22, 6]], R), '#f08c78', R, FL); shape(g, W, poly([[-18, -18], [-2, -18], [-2, -3], [-18, -3]], R), '#bfe3f4', R, NE);
+  shape(g, W, poly([[-24, -25], [4, -25], [4, -21], [-24, -21]], R), '#8fc7b0', R, FL); E(g, W, R, 16, -9, 1.8, 5, '#9a9fa8', NE);
+  for (const [x, y, r] of [[-12, 8, 13], [18, 13, 8]]) { E(g, W, R, x, y, r, r, dk); E(g, W, R, x, y, r * .45, r * .45, '#f6c85a', NE); for (let k = 0; k < 3; k++) { const a = t + k * 2.09; line(g, W, [[x, y], [x + Math.cos(a) * r * .8, y + Math.sin(a) * r * .8]], R, false, .3, '#8a6a30'); } }
+}
+function drawButterfly(g, W, c, R) {
+  const [a, b] = c.pal, f = .3 + .7 * Math.abs(Math.sin(c.clock * 9)), light = shade(a, '#ffffff', .6), body = '#6b5560', O = { noGrad: 1 }, Q = { noGrad: 1, noEdge: 1 };
+  for (const sd of [-1, 1]) {
+    shape(g, W, blob(sd * 11 * f, -8, 10.5 * f + .6, 11.5, R, 0, 12), a, R, O);
+    shape(g, W, blob(sd * 8 * f, 7, 7.5 * f + .5, 8, R, 0, 12), b, R, O);
+    shape(g, W, blob(sd * 12.5 * f, -10, 3.6 * f + .3, 3.6, R, 0, 8), light, R, Q);
+    shape(g, W, blob(sd * 8.5 * f, 8, 2.4 * f + .2, 2.4, R, 0, 8), shade(b, '#ffffff', .55), R, Q);
+  }
+  shape(g, W, blob(0, 1, 3.4, 10.5, R, 0, 12), body, R, Q); shape(g, W, blob(0, -11, 4.6, 4.4, R, 0, 12), body, R, Q);
+  shape(g, W, blob(-1.8, -11.6, 1.2, 1.4, R, 0, 6), '#ffffff', R, Q); shape(g, W, blob(1.8, -11.6, 1.2, 1.4, R, 0, 6), '#ffffff', R, Q);
+  line(g, W, [[-1.5, -15], [-4, -20], [-6.5, -21]], R, false, .5, body); line(g, W, [[1.5, -15], [4, -20], [6.5, -21]], R, false, .5, body);
+  shape(g, W, blob(-6.8, -21.2, 1.5, 1.5, R, 0, 6), body, R, Q); shape(g, W, blob(6.8, -21.2, 1.5, 1.5, R, 0, 6), body, R, Q);
+}
+function drawLadybug(g, W, c, R) {
+  const t = c.clock * 9;
+  for (const x of [-8, 0, 8]) line(g, W, [[x, 10], [x + Math.sin(t + x) * 1.5, 16]], R, false, .5, DK);
+  E(g, W, R, 0, 3, 14, 11.5, '#ee5f55'); line(g, W, [[3, -8], [4, 14]], R, false, .3, '#a63a36');
+  for (const [x, y, r] of [[-7, 0, 2.7], [-1, -4, 2.5], [-2, 6, 2.4], [8, 5, 2.2]]) E(g, W, R, x, y, r, r, DK, NE);
+  E(g, W, R, 13, 4, 6.5, 6, DK); E(g, W, R, 15, 2.6, 1.8, 2, '#ffffff', NE); cheek(g, W, R, 14, 7, 1.8);
+  line(g, W, [[14, -1], [17, -7]], R, false, .3, DK); line(g, W, [[11, -1], [10, -8]], R, false, .3, DK);
+}
+function drawSnail(g, W, c, R) {
+  const sw = Math.sin(c.clock * 2) * 1.5;
+  E(g, W, R, 2, 11, 23, 7, '#f2cfb6'); E(g, W, R, 19, 3, 7, 10, '#f2cfb6');
+  line(g, W, [[17, -4], [15 + sw, -13]], R, false, .4, '#d9b196'); line(g, W, [[22, -4], [25 + sw, -12]], R, false, .4, '#d9b196'); E(g, W, R, 15 + sw, -14, 2.2, 2.2, DK, NE); E(g, W, R, 25 + sw, -13, 2.2, 2.2, DK, NE);
+  eye(g, W, 21, 2, 1.6); cheek(g, W, R, 22, 7, 2); E(g, W, R, -5, -1, 15, 14.5, '#f0b86e'); E(g, W, R, -5, -1, 10, 9.5, '#f7d08e', NE); E(g, W, R, -5, -1, 5, 4.8, '#f0b86e', NE);
+}
+function drawBee(g, W, c, R) {
+  const fl = Math.sin(c.clock * 28) * 2.5;
+  E(g, W, R, -4, -11 - fl, 6, 8.5, '#e4f3fb'); E(g, W, R, 4, -11 + fl, 5.5, 7.5, '#e4f3fb');
+  shape(g, W, poly([[-15, 3], [-22, 3], [-15, 7]], R), DK, R, NE); E(g, W, R, 0, 3, 16, 12, '#fbd860');
+  E(g, W, R, -5, 3, 2.6, 11, '#5a4a40', NE); E(g, W, R, 2, 3, 2.6, 11.4, '#5a4a40', NE);
+  eye(g, W, 10, 1, 1.9); cheek(g, W, R, 9, 7, 2.2); smile(g, W, R, 13, 6, 1.6);
+  line(g, W, [[8, -8], [11, -15]], R, false, .3, DK); line(g, W, [[12, -7], [17, -12]], R, false, .3, DK); E(g, W, R, 11, -15.5, 1.5, 1.5, DK, NE); E(g, W, R, 17.5, -12.5, 1.5, 1.5, DK, NE);
+}
+function drawCarrot(g, W, c, R) {
+  shape(g, W, poly([[-24, 0], [-2, -9.5], [16, -9], [16, 9], [-2, 9.5]], R), '#f6a04d', R, FL);
+  for (const x of [-8, 0, 8]) line(g, W, [[x, -6], [x + 1, -3]], R, false, .3, '#d9822f');
+  for (const [dx, dy, r] of [[0, -10, -.7], [6, -12, 0], [12, -9, .7]]) { g.save(); g.translate(18 + dx * .2, dy * .4); g.rotate(r); E(g, W, R, 6, dy * .4, 8, 3.2, '#7fc062'); g.restore(); }
+  eye(g, W, 9, -2, 1.7); smile(g, W, R, 12, 3, 1.6); cheek(g, W, R, 5, 3, 2);
+}
+function drawYarn(g, W, c, R) {
+  line(g, W, [[10, 14], [20, 20], [30, 14], [38, 20]], R, false, .5, '#f6a9ba');
+  E(g, W, R, 0, 0, 15.5, 15.5, '#f6a9ba'); for (const [x, y, rx, ry] of [[-3, -3, 11, 6], [2, 4, 12, 5], [-6, 5, 7, 5]]) line(g, W, [[x - rx * .9, y + ry * .2], [x, y - ry * .5], [x + rx * .9, y + ry * .3]], R, false, .35, '#fbc9d5');
+  eye(g, W, -4, -1, 1.7); eye(g, W, 5, -1, 1.7); smile(g, W, R, .5, 4, 2); cheek(g, W, R, -8, 3, 2); cheek(g, W, R, 9, 3, 2);
+}
+
+function drawFish(g, W, c, R, clown) {
+  const [a, b] = c.pal, sw = Math.sin(c.clock * 7) * .14;
+  g.save(); g.translate(-13, 0); g.rotate(sw); shape(g, W, [[0, 0], [-8, -9], [-14, -11], [-10, 0], [-14, 11], [-8, 9]], b, R, FL); g.restore();
+  shape(g, W, [[-9, -9], [-5, -17], [3, -19], [8, -11]], b, R, FL); shape(g, W, [[0, 10], [3, 17], [9, 15], [8, 9]], b, R, FL);
+  E(g, W, R, 0, 0, 18, 13, a); E(g, W, R, 2, 6, 13, 5, tint(a, .55), NE);
+  g.save(); g.translate(-1, 3); g.rotate(.5 + sw); shape(g, W, leaf(9, 3.4), b, R, FL); g.restore();
+  if (clown) { for (const x of [-4, 8]) E(g, W, R, x, 0, 2.8, 11.6, '#fffaf0', NE); }
+  eye(g, W, 10, -3, 2.3); cheek(g, W, R, 8, 4, 2.4); smile(g, W, R, 14, 3, 1.6);
+}
+function drawClown(g, W, c, R) { drawFish(g, W, c, R, true); }
+function drawJelly(g, W, c, R) {
+  const [a, b] = c.pal, t = c.clock * 3;
+  for (let i = 0; i < 4; i++) { const x = -9 + i * 6, p = []; for (let k = 0; k <= 5; k++) p.push([x + Math.sin(t + i + k * .8) * (1 + k * .5), 6 + k * 5]); line(g, W, p, R, false, 1.1, b); }
+  E(g, W, R, 0, -3, 17, 14, a); E(g, W, R, 0, 7, 17, 4.2, b); E(g, W, R, -6, -9, 5, 3, tint(a, .6), NE);
+  eye(g, W, -5.5, -2, 1.9); eye(g, W, 5.5, -2, 1.9); smile(g, W, R, 0, 2, 2); cheek(g, W, R, -10, 2, 2.4); cheek(g, W, R, 10, 2, 2.4);
+}
+function drawTurtle(g, W, c, R) {
+  const [a, b] = c.pal, fl = Math.sin(c.clock * 4) * 3, sh = deep(a, .22);
+  shape(g, W, poly([[-17, 3], [-26, 5], [-17, 8]], R), tint(b, .2), R, FL);
+  E(g, W, R, -9, 12 + fl * .4, 7, 3.6, tint(b, .1)); E(g, W, R, 9, 12 - fl * .4, 7, 3.6, tint(b, .1));
+  E(g, W, R, 0, 0, 20, 14, a); E(g, W, R, -6, -1, 5.5, 4.6, sh, NE); E(g, W, R, 4, -4, 5.5, 4.8, sh, NE); E(g, W, R, 8, 4, 5, 4, sh, NE); E(g, W, R, -4, 6, 5, 3.6, sh, NE);
+  E(g, W, R, 22, 2, 8, 7, tint(b, .15)); eye(g, W, 25, 0, 1.8); cheek(g, W, R, 23, 5, 2.2); smile(g, W, R, 27, 4, 1.4);
+}
+function drawBubble(g, W, c, R) {
+  E(g, W, R, 0, 0, 11, 11, '#dff1fb'); line(g, W, [[-6, -4], [-4, -7], [-1, -8]], R, false, .4, '#ffffff'); E(g, W, R, 5, 5, 1.6, 1.6, '#ffffff', NE);
+}
+function drawCrab(g, W, c, R) {
+  const [a, b] = c.pal, t = c.clock * 8;
+  for (const sd of [-1, 1]) for (let k = 0; k < 3; k++) line(g, W, [[sd * (8 + k * 3), 8], [sd * (15 + k * 3), 12 + Math.sin(t + k + sd) * 1.4], [sd * (18 + k * 3), 18]], R, false, .6, b);
+  for (const sd of [-1, 1]) { line(g, W, [[sd * 13, -2], [sd * 19, -10]], R, false, 1, b); E(g, W, R, sd * 21, -14, 7, 6, a); shape(g, W, poly([[sd * 21, -14], [sd * 27, -17], [sd * 27, -11]], R), tint(a, .3), R, NE); }
+  E(g, W, R, 0, 3, 17, 11.5, a);
+  for (const sd of [-1, 1]) { line(g, W, [[sd * 6, -6], [sd * 6, -12]], R, false, .4, b); E(g, W, R, sd * 6, -13, 3.2, 3.2, '#ffffff'); dot(g, W, sd * 6, -13, 1.3); }
+  smile(g, W, R, 0, 5, 3); cheek(g, W, R, -10, 6, 2.6); cheek(g, W, R, 10, 6, 2.6);
+}
+function drawSeahorse(g, W, c, R) {
+  const [a, b] = c.pal, sw = Math.sin(c.clock * 3) * 1.5;
+  for (const [x, y, r] of [[-2, 14, 5.5], [-5, 20, 4.6], [-10 + sw, 24, 3.8], [-14 + sw, 21, 3.2], [-14 + sw, 17, 2.6]]) E(g, W, R, x, y, r, r, a);
+  E(g, W, R, -9, -2, 3.4, 6, b, NE); E(g, W, R, 0, 3, 8.5, 11, a); E(g, W, R, 2, 4, 5.5, 7, tint(a, .5), NE);
+  for (const y of [0, 5, 10]) line(g, W, [[-4, y], [5, y + 1]], R, false, .3, deep(a, .3));
+  E(g, W, R, 2, -8, 6, 7, a); E(g, W, R, 5, -17, 8, 6.5, a); E(g, W, R, 14, -15, 6.5, 2.8, a);
+  shape(g, W, poly([[0, -22], [4, -27], [7, -22]], R), b, R, FL); eye(g, W, 6, -18, 1.8); cheek(g, W, R, 5, -13, 2);
+}
+function drawWhale(g, W, c, R) {
+  const sw = Math.sin(c.clock * 3) * 2.5;
+  shape(g, W, poly([[-24, -2], [-38, -15 + sw], [-33, -1], [-38, 11 + sw]], R), '#8fb6dd', R, FL);
+  E(g, W, R, 0, 0, 29, 16, '#9cc4e6'); E(g, W, R, 3, 7, 24, 9, '#e6f3fb', NE); E(g, W, R, 7, 13, 8, 3.4, '#8fb6dd');
+  eye(g, W, 17, -3, 2.1); cheek(g, W, R, 15, 4, 2.8); smile(g, W, R, 21, 5, 2.4);
+  line(g, W, [[6, -17], [6, -23]], R, false, .4, '#cfe8f6'); line(g, W, [[2, -22], [6, -23], [10, -22]], R, false, .4, '#cfe8f6');
+}
+function drawOctopus(g, W, c, R) {
+  const t = c.clock * 3, a = '#e89ac0', b = '#d77aa8';
+  for (let i = 0; i < 5; i++) { const x = -12 + i * 6, p = []; for (let k = 0; k <= 5; k++) p.push([x + Math.sin(t + i * .9 + k * .7) * (1 + k * .8), 6 + k * 4.6 + 0]); line(g, W, p, R, false, 1.9, a); }
+  E(g, W, R, 0, -6, 15, 14, a); E(g, W, R, -6, -12, 4.5, 3, tint(a, .5), NE);
+  eye(g, W, -5.5, -5, 2.4); eye(g, W, 5.5, -5, 2.4); smile(g, W, R, 0, 0, 2.2); cheek(g, W, R, -11, -1, 2.6); cheek(g, W, R, 11, -1, 2.6);
+  for (const x of [-5, 4]) E(g, W, R, x, -14, 1.5, 1.5, b, NE);
+}
+function drawPuffer(g, W, c, R) {
+  const fl = Math.sin(c.clock * 9) * 2;
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283 + .3; shape(g, W, poly([[Math.cos(a - .15) * 15, Math.sin(a - .15) * 14], [Math.cos(a) * 20, Math.sin(a) * 19], [Math.cos(a + .15) * 15, Math.sin(a + .15) * 14]], R), '#e9b64e', R, NE); }
+  E(g, W, R, -17, 0, 6, 4 + fl * .3, '#f2c35e'); E(g, W, R, 0, 0, 16, 15, '#f7d36b'); E(g, W, R, 2, 6, 11, 7, '#fbe9a8', NE);
+  eye(g, W, 7, -4, 2.3); cheek(g, W, R, 5, 4, 2.6); E(g, W, R, 13, 3, 1.6, 2, DK, NE);
+}
+function drawStarfish(g, W, c, R) {
+  shape(g, W, poly(star5(0, 0, 18, 8.5, 0), R), '#f6a58f', R, FL);
+  for (let i = 0; i < 5; i++) { const a = i * 1.2566 - 1.5708; E(g, W, R, Math.cos(a) * 11, Math.sin(a) * 11, 1.3, 1.3, '#fbd0c3', NE); }
+  eye(g, W, -3.5, -1, 1.7); eye(g, W, 3.5, -1, 1.7); smile(g, W, R, 0, 3, 1.8); cheek(g, W, R, -7, 2.5, 1.8); cheek(g, W, R, 7, 2.5, 1.8);
+}
+function drawChest(g, W, c, R) {
+  E(g, W, R, 0, -3, 19, 12, '#d9975e'); shape(g, W, poly([[-19, -2], [19, -2], [19, 15], [-19, 15]], R), '#c0834c', R, FL);
+  for (const x of [-11, 11]) { shape(g, W, poly([[x - 2.5, -10], [x + 2.5, -10], [x + 2.5, 15], [x - 2.5, 15]], R), '#8a5a3a', R, NE); }
+  E(g, W, R, 0, 2, 3.6, 4, '#f6d36b'); dot(g, W, 0, 2.4, .9);
+  for (const [x, y] of [[-6, -14], [3, -15], [9, -12]]) E(g, W, R, x, y, 3.6, 2.2, '#f6d36b');
+}
+function drawRabbit(g, W, c, R) {
+  const [a, b] = c.pal, t = c.clock * 7, ew = Math.sin(c.clock * 3) * 1.5;
+  E(g, W, R, -22, 6, 5, 5, '#fffaf2');
+  E(g, W, R, -9, 16, 8, 4, deep(a, .1)); E(g, W, R, 9, 16.5, 6, 3.4, deep(a, .1));
+  E(g, W, R, -4, 6, 17, 12.5, a); E(g, W, R, 11, -3, 11, 10, a);
+  E(g, W, R, 6 + ew, -19, 3.8, 10.5, a); E(g, W, R, 6 + ew, -19, 1.9, 7.5, b, NE); E(g, W, R, 14 - ew, -19, 3.8, 10.5, a); E(g, W, R, 14 - ew, -19, 1.9, 7.5, b, NE);
+  eye(g, W, 14, -4, 1.9); E(g, W, R, 21, 1, 1.6, 1.3, '#f08ca3', NE); cheek(g, W, R, 12, 3, 2.4); smile(g, W, R, 18, 4, 1.6);
+}
+function drawFox(g, W, c, R) {
+  const t = c.clock * 7, o = '#f2985a', sw = Math.sin(c.clock * 2.5) * 2;
+  E(g, W, R, -24, 0 + sw, 14, 7.5, o); E(g, W, R, -34, 0 + sw, 5, 6, '#fffaf2', NE);
+  for (const [x, ph] of [[-9, 0], [-2, 1.5], [8, 3], [13, 4.5]]) limb(g, W, R, x, 10, 21 - Math.max(0, Math.sin(t + ph)) * 1.5, 2.8, '#7a5848');
+  E(g, W, R, -1, 3, 19, 11, o); E(g, W, R, 3, 7, 12, 5.5, '#fffaf2', NE);
+  shape(g, W, poly([[9, -8], [11, -21], [18, -11]], R), o, R, FL); shape(g, W, poly([[18, -11], [24, -20], [27, -7]], R), o, R, FL);
+  E(g, W, R, 18, -3, 11, 9, o); shape(g, W, poly([[12, 1], [28, 1], [20, 9]], R), '#fffaf2', R, NE);
+  E(g, W, R, 28, -1, 2.4, 2, DK, NE); eye(g, W, 17, -5, 1.8); eye(g, W, 24, -5, 1.8); cheek(g, W, R, 13, 1, 2);
+}
+function drawDeer(g, W, c, R) {
+  const t = c.clock * 6, a = '#e3a86e';
+  for (const [x, ph] of [[-11, 0], [-5, 1.5], [8, 3], [13, 4.5]]) { limb(g, W, R, x, 10, 27 - Math.max(0, Math.sin(t + ph)) * 1.5, 2.3, '#d6975e'); }
+  E(g, W, R, 0, 4, 18, 10.5, a); for (const [x, y] of [[-8, 1], [-2, -2], [5, 2], [-5, 7], [8, 7]]) E(g, W, R, x, y, 1.6, 1.6, '#fbe8cc', NE);
+  E(g, W, R, 12, -5, 5.5, 9, a); E(g, W, R, 18, -13, 8.5, 7.5, a); E(g, W, R, 25, -11, 4.5, 3.4, tint(a, .5)); E(g, W, R, 28, -11.5, 1.4, 1.2, DK, NE);
+  E(g, W, R, 12, -18, 4.6, 3, a); E(g, W, R, 23, -19, 4.6, 3, a); E(g, W, R, 12, -18, 2.4, 1.4, '#f6b7b0', NE);
+  line(g, W, [[14, -20], [12, -27], [9, -29]], R, false, .5, '#b9815a'); line(g, W, [[12, -26], [15, -29]], R, false, .4, '#b9815a'); line(g, W, [[21, -20], [23, -27], [26, -29]], R, false, .5, '#b9815a');
+  eye(g, W, 21, -14, 1.8); cheek(g, W, R, 20, -8, 2);
+}
+function drawLeaf(g, W, c, R) {
+  const [a, b] = c.pal;
+  shape(g, W, poly([[-16, 0], [-6, -9], [8, -9], [17, 0], [8, 9], [-6, 9]], R), a, R, FL);
+  line(g, W, [[-18, 0], [14, 0]], R, false, .35, b); for (const x of [-6, 2, 9]) { line(g, W, [[x, 0], [x + 4, -5]], R, false, .25, b); line(g, W, [[x, 0], [x + 4, 5]], R, false, .25, b); }
+}
+function drawOwl(g, W, c, R) {
+  const a = '#c9a07c', fl = Math.sin(c.clock * 5) * 3;
+  E(g, W, R, -15, 6 - fl, 5.5, 11, deep(a, .15)); E(g, W, R, 15, 6 - fl, 5.5, 11, deep(a, .15));
+  limb(g, W, R, -5, 18, 24, 2.6, ORG); limb(g, W, R, 5, 18, 24, 2.6, ORG);
+  E(g, W, R, 0, 5, 15.5, 17.5, a); E(g, W, R, 0, 10, 10.5, 11.5, '#f8e6cc', NE);
+  for (const [x, y] of [[-3, 8], [3, 8], [0, 13]]) line(g, W, [[x - 2, y], [x, y + 2], [x + 2, y]], R, false, .25, '#d9b88c');
+  shape(g, W, poly([[-13, -9], [-12, -21], [-4, -12]], R), a, R, FL); shape(g, W, poly([[4, -12], [12, -21], [13, -9]], R), a, R, FL);
+  for (const sd of [-1, 1]) { E(g, W, R, sd * 7, -6, 7, 7, '#fffaf0', NE); E(g, W, R, sd * 7, -6, 3.6, 3.8, DK, NE); E(g, W, R, sd * 7 + 1.2, -7.5, 1.2, 1.2, '#ffffff', NE); cheek(g, W, R, sd * 12.5, 1, 2.2); }
+  shape(g, W, poly([[-2.5, -2], [2.5, -2], [0, 3]], R), ORG, R, NE);
+}
+function drawAcorn(g, W, c, R) {
+  E(g, W, R, 0, 5, 9.5, 12, '#dba466'); E(g, W, R, -3, 2, 3, 6, '#ebc08a', NE);
+  E(g, W, R, 0, -7, 11.5, 7, '#a8744f'); for (const x of [-6, -2, 2, 6]) line(g, W, [[x, -11], [x + 1, -4]], R, false, .22, '#865a3b');
+  line(g, W, [[0, -13], [1, -18]], R, false, .6, '#865a3b'); eye(g, W, -3.5, 5, 1.6); eye(g, W, 3.5, 5, 1.6); smile(g, W, R, 0, 9, 1.6); cheek(g, W, R, -6.5, 8.5, 1.7); cheek(g, W, R, 6.5, 8.5, 1.7);
+}
+function drawRocket(g, W, c, R) {
+  const f = Math.sin(c.clock * 20) * 2.5;
+  shape(g, W, poly([[-24, -4], [-37 - f, 0], [-24, 4]], R), '#f59a3a', R, NE); shape(g, W, poly([[-24, -2], [-31 - f * .6, 0], [-24, 2]], R), '#fbe08a', R, NE);
+  shape(g, W, poly([[-16, -8], [-26, -20], [-5, -10]], R), '#ee6f5d', R, FL); shape(g, W, poly([[-16, 8], [-26, 20], [-5, 10]], R), '#ee6f5d', R, FL);
+  E(g, W, R, 0, 0, 25, 11, '#fbf6ee'); shape(g, W, poly([[12, -10], [32, 0], [12, 10]], R), '#ee6f5d', R, FL);
+  E(g, W, R, 3, -1, 6.4, 6.4, '#9fb4cc'); E(g, W, R, 3, -1, 4.6, 4.6, '#bfe3f4', NE); E(g, W, R, 2, -2.6, 1.5, 1.2, '#ffffff', NE);
+}
+function drawUfo(g, W, c, R) {
+  const bl = Math.sin(c.clock * 5);
+  for (const x of [-13, 13]) limb(g, W, R, x, 9, 15, 2.2, '#8f9ad6');
+  E(g, W, R, 0, -8, 11, 10, '#bfe3f4'); E(g, W, R, 0, -5, 4.6, 5.2, '#a9dc9a', NE); eye(g, W, -1.3, -6, 1.1); eye(g, W, 1.8, -6, 1.1); E(g, W, R, -4, -12, 2.6, 1.8, '#ffffff', NE);
+  E(g, W, R, 0, 2, 27, 9, '#aeb7e8'); E(g, W, R, 0, 5, 22, 4.6, '#8f9ad6', NE);
+  for (let i = 0; i < 5; i++) E(g, W, R, -16 + i * 8, 3, 1.9, 1.9, (i + (bl > 0 ? 1 : 0)) % 2 ? '#fbe08a' : '#fff6c9', NE);
+}
+function drawStar(g, W, c, R) {
+  const tw = 1 + Math.sin(c.clock * 3 + c.ph) * .08; g.scale(tw, tw);
+  shape(g, W, poly(star5(0, 0, 19, 10, 0), R), '#f9d96a', R, FL); eye(g, W, -4, -1, 1.7); eye(g, W, 4, -1, 1.7); smile(g, W, R, 0, 3.5, 2); cheek(g, W, R, -8, 3, 1.8); cheek(g, W, R, 8, 3, 1.8);
+}
+function drawComet(g, W, c, R) {
+  shape(g, W, poly([[0, -10], [-36, -3], [-40, 0], [-36, 3], [0, 10]], R), '#fbe9a8', R, NE); shape(g, W, poly([[-2, -6], [-26, -1], [-2, 6]], R), '#fff3c4', R, NE);
+  E(g, W, R, 8, 0, 11, 11, '#f9d96a'); eye(g, W, 8, -2, 1.7); eye(g, W, 14, -2, 1.7); smile(g, W, R, 11, 3, 1.8); cheek(g, W, R, 5, 3, 1.8);
+}
+function drawAstronaut(g, W, c, R) {
+  const sw = Math.sin(c.clock * 2) * 3;
+  E(g, W, R, -10, 7, 5, 9, '#c9ced6'); line(g, W, [[-6, 6], [-15 + sw, 13]], R, false, 2, '#fbf6ee'); line(g, W, [[7, 6], [15 - sw, 12]], R, false, 2, '#fbf6ee');
+  limb(g, W, R, -4, 17, 25, 3.6, '#e5e9ee'); limb(g, W, R, 5, 17, 25, 3.6, '#e5e9ee'); E(g, W, R, -4, 25, 4, 2.2, '#ee6f5d', NE); E(g, W, R, 5, 25, 4, 2.2, '#ee6f5d', NE);
+  E(g, W, R, 0, 8, 11.5, 13, '#fbf6ee'); E(g, W, R, 0, 9, 4, 3.2, '#ee6f5d', NE);
+  E(g, W, R, 2, -9, 12.5, 12, '#fbf6ee'); E(g, W, R, 4.5, -9, 8.8, 7.6, '#6f9fd4'); E(g, W, R, 2.5, -11.5, 3, 1.8, '#bfe3f4', NE); eye(g, W, 4, -8, 1.3); eye(g, W, 9, -8, 1.3);
+}
+function drawAsteroid(g, W, c, R) {
+  E(g, W, R, 0, 0, 18, 14, '#b8a9c9'); E(g, W, R, -6, 3, 4.6, 3.6, '#9d8fb4', NE); E(g, W, R, 8, -5, 3.4, 2.8, '#9d8fb4', NE); E(g, W, R, 9, 7, 2.4, 2, '#9d8fb4', NE);
+  eye(g, W, -3, -3, 1.6); eye(g, W, 4, -3, 1.6); smile(g, W, R, .5, 1.5, 1.8);
+}
+function drawMoon(g, W, c, R) {
+  const p = [];
+  for (let i = 0; i <= 22; i++) { const a = (44 + i / 22 * 272) * Math.PI / 180; p.push([Math.cos(a) * 16, Math.sin(a) * 16]); }
+  for (let i = 1; i < 22; i++) { const a = (292 - i / 22 * 224) * Math.PI / 180; p.push([7 + Math.cos(a) * 12, Math.sin(a) * 12]); }
+  shape(g, W, p, '#f9e6a0', R, FL); line(g, W, [[-12, -2], [-9.5, -.2], [-7, -2]], R, false, .4); smile(g, W, R, -9, 4, 1.4); cheek(g, W, R, -13, 3, 1.8);
+}
+function drawConstel(g, W, c, R) {
+  const P = [[-34, 8], [-18, -6], [-2, 7], [14, -9], [31, -2]], tw = Math.sin(c.clock * 3);
+  line(g, W, P, R, false, .3, '#eef0fb');
+  P.forEach(([x, y], i) => shape(g, W, poly(star5(x, y, 5.2 + (i % 2) * 2.2 + tw * .5, 2.6 + (i % 2), 0), R), '#f9d96a', R, NE));
+}
+function drawSailboat(g, W, c, R) {
+  shape(g, W, poly([[-24, 2], [24, 2], [16, 13], [-16, 13]], R), '#ee6f5d', R, FL); shape(g, W, poly([[-22, 4], [22, 4], [21, 7], [-21, 7]], R), '#fbf6ee', R, NE);
+  line(g, W, [[0, 2], [0, -28]], R, false, .6, '#8a6a50');
+  shape(g, W, poly([[2, -26], [2, -1], [20, -1]], R), '#fbf6ee', R, FL); shape(g, W, poly([[-2, -20], [-2, -1], [-16, -1]], R), '#fbe08a', R, FL);
+  shape(g, W, poly([[0, -28], [8, -26], [0, -23]], R), '#ee6f5d', R, NE);
+}
+function drawBalloon(g, W, c, R) {
+  const [a, b] = c.pal;
+  line(g, W, [[-9, 8], [-5, 16]], R, false, .3, '#8a6a50'); line(g, W, [[9, 8], [5, 16]], R, false, .3, '#8a6a50');
+  E(g, W, R, 0, -6, 15.5, 17.5, a); E(g, W, R, 0, -6, 5.5, 17, b, NE); E(g, W, R, -6, -12, 3, 5, tint(a, .5), NE);
+  shape(g, W, poly([[-6, 15], [6, 15], [5, 24], [-5, 24]], R), '#c98f5a', R, FL);
+}
+function drawRowboat(g, W, c, R) {
+  const r = Math.sin(c.clock * 2) * 6;
+  line(g, W, [[-7, -3], [-18, 8 + r], [-25, 12 + r]], R, false, .8, '#b88a64'); line(g, W, [[7, -3], [18, 8 - r], [25, 12 - r]], R, false, .8, '#b88a64');
+  E(g, W, R, 0, -8, 6.6, 6.2, '#f6d3b0'); E(g, W, R, 0, -3, 7, 6.5, '#6f9fd4'); E(g, W, R, 0, -12.5, 7.4, 3.4, '#f6c85a', NE); eye(g, W, 2, -8, 1.2);
+  shape(g, W, poly([[-28, 0], [28, 0], [19, 11], [-19, 11]], R), '#e08a5a', R, FL); shape(g, W, poly([[-26, 2], [26, 2], [25, 5], [-25, 5]], R), '#fbf6ee', R, NE);
+}
+function drawRainbow(g, W, c, R) {
+  const cols = ['#f28b82', '#fbbc6a', '#f9e07a', '#8fd0a0', '#7fb3e0', '#b9a4ee'];
+  g.save(); g.lineCap = 'butt'; g.globalAlpha = W.a;
+  cols.forEach((col, i) => { g.beginPath(); g.arc(0, 18, 46 - i * 5.6, Math.PI, 0); g.lineWidth = 6; g.strokeStyle = W.c(col); g.stroke(); });
+  g.restore();
+  for (const sd of [-1, 1]) { g.save(); g.translate(sd * 40, 16); drawCloud(g, W, R, 36, 14); g.restore(); }
+}
+function drawCrane(g, W, c, R) {
+  const [a, b] = c.pal, f = Math.sin(c.clock * 5) * 5;
+  shape(g, W, poly([[-2, 0], [-8, -22 + f], [10, -6]], R), tint(a, .2), R, FL);
+  shape(g, W, poly([[-12, 3], [-25, -3], [-11, 8]], R), b, R, FL);
+  shape(g, W, poly([[-12, 3], [8, -2], [14, 5], [-3, 11]], R), a, R, FL);
+  shape(g, W, poly([[8, 0], [17, -15], [20, -13], [13, 3]], R), a, R, FL); shape(g, W, poly([[17, -15], [26, -12], [19, -11]], R), b, R, FL); eye(g, W, 18.5, -13, 1.2);
+  shape(g, W, poly([[2, 1], [-14, -17 + f], [12, -4]], R), a, R, FL);
+}
+function drawZeppelin(g, W, c, R) {
+  const pr = Math.sin(c.clock * 30);
+  shape(g, W, poly([[-26, -3], [-38, -15], [-30, 0]], R), '#ee8f78', R, FL); shape(g, W, poly([[-26, 3], [-38, 15], [-30, 0]], R), '#ee8f78', R, FL);
+  E(g, W, R, 0, 0, 33, 14, '#f3d6ae'); for (const x of [-12, 4, 20]) E(g, W, R, x, 0, 2.8, 13.4, '#ee8f78', NE);
+  E(g, W, R, 2, 16, 10, 4.6, '#b88a64'); for (const x of [-3, 2, 7]) E(g, W, R, x, 16, 1.6, 1.6, '#bfe3f4', NE);
+  E(g, W, R, -22, 17, 1.8, 3.4 + pr * 1.2, '#8a6a50', NE);
+  eye(g, W, 24, -2, 1.9); cheek(g, W, R, 22, 4, 2.2);
+}
+
+function rrPoly(x0, y0, x1, y1, r) { const p = [], cs = [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]; for (const [cx, cy, a0] of cs) for (let k = 0; k <= 3; k++) { const a = (a0 + k * 30) * Math.PI / 180; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return p; }
+function leaf(L, w) { return [[0, 0], [-.25 * L, -.85 * w], [-.65 * L, -w * .6], [-L, 0], [-.62 * L, .7 * w], [-.25 * L, w]]; }
+function wingAt(g, W, R, x, y, ang, pts, col, o) { g.save(); g.translate(x, y); g.rotate(ang); shape(g, W, pts, col, R, o || FL); g.restore(); }   // 羽翼：以肩膀為軸、可拍動的葉片形翅膀
+function drawPig(g, W, c, R) {                         // 天竺鼠：長長的身體、臉上有白色斑紋
+  const [a, b] = c.pal, t = c.clock * 8, ear = '#f4b3b9', bob = Math.sin(t) * .7;
+  for (const [x, ph] of [[-16, 0], [-7, 1.6], [8, 3.2], [17, 4.8]]) E(g, W, R, x, 17 - Math.max(0, Math.sin(t + ph)) * 1.6, 4.2, 3.4, deep(a, .2));
+  E(g, W, R, -4, 3 + bob * .4, 25, 14.5, a); E(g, W, R, -12, -3 + bob * .4, 9.5, 6, b, NE); E(g, W, R, -2, 4 + bob * .4, 8, 5, b, NE);
+  E(g, W, R, 20, 4 + bob * .4, 12, 11, a); E(g, W, R, 24, 3 + bob * .4, 3.6, 8.5, '#fffaf2', NE);
+  E(g, W, R, 12, -6 + bob * .4, 4.6, 4, ear); E(g, W, R, 20.5, -7 + bob * .4, 4.2, 3.7, ear);
+  eye(g, W, 22.5, 1.5 + bob * .4, 1.9); E(g, W, R, 30, 6 + bob * .4, 1.9, 1.5, '#8a6a66', NE); cheek(g, W, R, 19.5, 9 + bob * .4, 3);
+}
+function drawBabyPig(g, W, c, R) {                     // 爆米花小天竺鼠：圓滾滾的小球，一蹦一蹦
+  const [a, b] = c.pal, t = c.clock * 9, bob = Math.abs(Math.sin(t)) * -1.5;
+  for (const x of [-6, 7]) E(g, W, R, x, 16, 4, 2.8, deep(a, .2));
+  E(g, W, R, 0, 3 + bob, 16, 15, a); E(g, W, R, -6, -4 + bob, 5.5, 4.2, b, NE); E(g, W, R, 6, 9 + bob, 4.5, 3.4, b, NE);
+  E(g, W, R, -6, -12 + bob, 3.4, 3.2, '#f4b3b9'); E(g, W, R, 7, -12 + bob, 3.2, 3, '#f4b3b9');
+  eye(g, W, -5, 1 + bob, 2.5); eye(g, W, 6, 1 + bob, 2.5); E(g, W, R, .5, 5.5 + bob, 1.8, 1.4, '#8a6a66', NE); cheek(g, W, R, -10, 6 + bob, 2.8); cheek(g, W, R, 11, 6 + bob, 2.8);
+}
+function drawSparrow(g, W, c, R) {                     // 麻雀：小小圓圓、咖啡色、黑色小圍兜
+  const [a, b] = c.pal, fl = Math.sin(c.clock * 12);
+  shape(g, W, poly([[-10, 2], [-25, -1 + fl * 1.5], [-24, 6 + fl * 1.5], [-10, 8]], R), b, R, FL);
+  E(g, W, R, -1, 4, 14, 11.5, a); E(g, W, R, 2, 8, 9, 5.5, tint(a, .55), NE);
+  E(g, W, R, 9, -6, 8.5, 8, a); E(g, W, R, 13, -1, 3.8, 3, DK, NE);
+  shape(g, W, poly([[16, -8.5], [22, -6.5], [16, -4.5]], R), '#e8b86a', R, FL); eye(g, W, 11.5, -8, 1.7); cheek(g, W, R, 8, -3, 2);
+  wingAt(g, W, R, 3, 1, fl * .3, leaf(21, 6.5), b);
+}
+function drawGull(g, W, c, R) {                        // 海鷗：修長、雙翼展開的白鳥，黃嘴有紅點
+  const [a, b] = c.pal, fl = Math.sin(c.clock * 7);
+  wingAt(g, W, R, -2, -4, .95 + fl * .4, leaf(30, 5.5), tint(b, .35));
+  shape(g, W, poly([[-16, 2], [-31, 0], [-29, 8], [-15, 9]], R), a, R, FL);
+  E(g, W, R, 0, 3, 20, 9.5, a); E(g, W, R, 3, 6, 13, 4.5, tint(a, .2), NE);
+  E(g, W, R, 18, -3, 7.4, 7, a); shape(g, W, poly([[24, -4.5], [32, -2.5], [24, -.5]], R), '#f6c85a', R, FL); E(g, W, R, 30.5, -1, .9, .9, '#ee5f55', NE); eye(g, W, 19.5, -4.5, 1.6);
+  g.save(); g.translate(1, -3); g.rotate(.7 + fl * .45); shape(g, W, leaf(32, 6.2), b, R, FL); g.translate(-24, 0); shape(g, W, leaf(9, 3.6), DK, R, NE); g.restore();
+}
+function drawDove(g, W, c, R) {                        // 白鴿：胖胖的、小頭、扇形尾巴、銜著橄欖葉
+  const [a, b] = c.pal, fl = Math.sin(c.clock * 7);
+  shape(g, W, poly([[-12, 3], [-30, -5], [-31, 5], [-26, 12], [-12, 11]], R), tint(b, .2), R, FL); for (const y of [-1, 4]) line(g, W, [[-16, 5], [-27, y]], R, false, .22, b);
+  E(g, W, R, -2, 4, 16, 13, a); E(g, W, R, 8, 6, 9, 8, a); E(g, W, R, 12, -8, 7, 6.8, a);
+  shape(g, W, poly([[18, -9], [23, -7.5], [18, -6]], R), '#f2a79c', R, FL); E(g, W, R, 25, -9, 3.6, 1.8, '#9ccf7a'); eye(g, W, 14, -9.5, 1.6); cheek(g, W, R, 11, -4.5, 2);
+  wingAt(g, W, R, 4, 0, fl * .3 - .05, leaf(24, 8), b);
+}
+function drawCloudBird(g, W, c, R) {                   // 雲上的藍鳥：頭上一撮羽冠、長尾巴
+  const [a, b] = c.pal, br = Math.sin(c.clock * 2) * .8;
+  g.save(); g.translate(0, 8); drawCloud(g, W, R, 92, 28); g.restore();
+  shape(g, W, poly([[-10, -4], [-27, -12], [-25, -2], [-10, 2]], R), b, R, FL);
+  E(g, W, R, -1, -6, 13, 11 + br * .3, a); E(g, W, R, 2, -2, 8, 5.5, tint(a, .55), NE);
+  E(g, W, R, 8, -17 + br, 8.5, 8, a); shape(g, W, poly([[5, -24 + br], [8, -32 + br], [11, -24 + br]], R), b, R, FL);
+  shape(g, W, poly([[15, -18 + br], [22, -15.5 + br], [15, -13 + br]], R), ORG, R, FL); eye(g, W, 11, -19 + br, 1.8); cheek(g, W, R, 8, -13 + br, 2.2);
+  wingAt(g, W, R, 2, -7, .1, leaf(18, 5.8), b);
+}
+function drawChick(g, W, c, R) {
+  const [a, b] = c.pal, s1 = Math.sin(c.clock * 9) * 3;
+  line(g, W, [[-3, 12], [-3 + s1, 20]], R, false, .6, ORG); line(g, W, [[4, 12], [4 - s1, 20]], R, false, .6, ORG);
+  E(g, W, R, 0, 4, 16, 13.5, a); E(g, W, R, 9, -11, 10, 9.5, a);
+  line(g, W, [[8, -20], [6, -26], [10, -27]], R, false, .4, deep(a, .3));
+  shape(g, W, poly([[17, -12], [24, -9.5], [17, -7]], R), ORG, R, FL); eye(g, W, 12, -12, 1.9); cheek(g, W, R, 8, -6.5, 2.4);
+  wingAt(g, W, R, 4, 3, s1 * .03, leaf(14, 5), b);
+}
+function drawHen(g, W, c, R) {
+  const [a, b] = c.pal, s1 = Math.sin(c.clock * 7) * 2.5;
+  line(g, W, [[-4, 15], [-4 + s1, 24]], R, false, .6, ORG); line(g, W, [[5, 15], [5 - s1, 24]], R, false, .6, ORG);
+  shape(g, W, poly([[-15, 0], [-29, -8], [-26, 8], [-15, 12]], R), b, R, FL);
+  E(g, W, R, -2, 4, 20, 16, a); E(g, W, R, 14, -11, 9.5, 9, a);
+  for (const [x, y] of [[10, -19.5], [14.5, -21.5], [19, -19]]) E(g, W, R, x, y, 3.4, 4, '#ee5f55', NE);
+  shape(g, W, poly([[21, -11], [28, -8.5], [21, -6]], R), ORG, R, FL); E(g, W, R, 20.5, -3, 2.4, 3.6, '#ee5f55', NE);
+  eye(g, W, 16.5, -12, 1.9); cheek(g, W, R, 11, -6, 2.3);
+  wingAt(g, W, R, 6, 2, s1 * .03, leaf(19, 7), b);
+}
+function drawDuck(g, W, c, R) {                        // 鴨子：白身體、藍翅膀、扁扁的小橘嘴
+  const [a, b] = c.pal, s = Math.sin(c.clock * 8) * 2.5;
+  line(g, W, [[-3, 12], [-3 + s, 19], [3 + s, 19]], R, false, .6, ORG); line(g, W, [[5, 12], [5 - s, 19], [11 - s, 19]], R, false, .6, ORG);
+  shape(g, W, poly([[-14, 0], [-28, -9], [-24, 6]], R), a, R, FL);
+  E(g, W, R, -3, 4, 20, 12, a); E(g, W, R, 9, -2, 6, 9, a); E(g, W, R, 12, -10, 7.6, 7.4, a);
+  E(g, W, R, 20, -7.5, 4.8, 2.3, ORG, FL); eye(g, W, 13.5, -11, 1.8); cheek(g, W, R, 10, -6, 2.1);
+  wingAt(g, W, R, 6, 2, s * .02, leaf(21, 6.8), b);
+}
+function drawFarmPig(g, W, c, R) {
+  const t = c.clock * 8, p = '#f8b5c4', d = '#ee93aa';
+  for (const [x, ph] of [[-12, 0], [-4, 1.6], [8, 3.2], [15, 4.8]]) limb(g, W, R, x, 12, 22 - Math.max(0, Math.sin(t + ph)) * 1.6, 3.4, d);
+  line(g, W, [[-21, 0], [-27, -3], [-24, -8], [-29, -9]], R, false, .5, d);
+  E(g, W, R, -2, 3, 21, 14.5, p); E(g, W, R, 17, 0, 11, 10.5, p);
+  shape(g, W, poly([[11, -8], [13, -14], [17.5, -8.5]], R), d, R, FL); shape(g, W, poly([[18, -8.5], [22, -13.5], [24.5, -6.5]], R), d, R, FL);
+  E(g, W, R, 27, 3, 5.5, 4.8, '#f08ca3'); dot(g, W, 25.5, 3, .9); dot(g, W, 29, 3, .9); eye(g, W, 19, -3, 1.9); cheek(g, W, R, 13, 5.5, 2.6);
+}
+function drawDolphin(g, W, c, R) {
+  const sw = Math.sin(c.clock * 5) * .15, fin = '#7fa9d6';
+  g.save(); g.translate(-22, 0); g.rotate(sw); shape(g, W, [[0, 0], [-7, -7], [-14, -9], [-11, -2], [-13, 0], [-11, 2], [-14, 9], [-7, 7]], fin, R, FL); g.restore();
+  g.save(); g.translate(0, -9); g.rotate(-.55); E(g, W, R, 0, -5, 3.4, 7.5, fin); g.restore();
+  E(g, W, R, 0, 0, 24, 11, '#8fbbe6'); E(g, W, R, 20, 1, 9, 8, '#8fbbe6'); E(g, W, R, 28, 4, 7, 3.2, '#8fbbe6');
+  E(g, W, R, 3, 6, 21, 5, '#eaf5fc', NE); g.save(); g.translate(2, 8); g.rotate(.5); E(g, W, R, 0, 3, 3, 6.5, fin); g.restore();
+  eye(g, W, 19, -2, 1.9); cheek(g, W, R, 17, 4, 2.2); smile(g, W, R, 28, 5.5, 2.8);
+}
+function drawSquirrel(g, W, c, R) {
+  const sw = Math.sin(c.clock * 3) * 1.5, o = '#e0a06a', tl = '#d98f55';
+  const ctl = [[-7, 14, 6], [-14, 10, 7.5], [-18, 1, 8.5], [-17, -9, 9], [-11, -17, 8], [-3, -21, 6.5]], path = [];
+  for (let i = 0; i < ctl.length - 1; i++) for (let k = 0; k < 4; k++) { const u = k / 4, [x0, y0, r0] = ctl[i], [x1, y1, r1] = ctl[i + 1], w2 = i > 1 ? (i - 1 + u) * .35 : 0;
+    path.push([x0 + (x1 - x0) * u - sw * w2, y0 + (y1 - y0) * u, r0 + (r1 - r0) * u]); }
+  for (const [x, y, r] of path) E(g, W, R, x, y, r, r * 1.05, tl, NE);
+  line(g, W, path.slice(3, -2).map(([x, y]) => [x + 1.5, y]), R, false, 1.6, '#eec394');
+  limb(g, W, R, -2, 16, 24, 3.4, o); limb(g, W, R, 8, 16, 24, 3.4, o);
+  E(g, W, R, 2, 6, 11, 14, o); E(g, W, R, 5, 9, 6.5, 9, '#faead2', NE);
+  E(g, W, R, 8, -11, 10, 9.5, o); E(g, W, R, 3, -20, 3, 4, o); E(g, W, R, 12, -20, 3, 4, o);
+  E(g, W, R, 16, -9, 3.6, 3, '#faead2', NE); E(g, W, R, 18.5, -10.5, 1.6, 1.3, DK, NE); eye(g, W, 10, -12, 1.9); cheek(g, W, R, 8, -6, 2.2);
+}
+function drawHedgehog(g, W, c, R) {                    // 刺蝟：蓬蓬的圓刺、大臉
+  const t = c.clock * 8, dk = '#8a6a58', lt = '#a8826c';
+  for (let i = 0; i < 11; i++) { const a = Math.PI + i / 10 * Math.PI * .92 - .02, r = 20; E(g, W, R, -4 + Math.cos(a) * r, 8 + Math.sin(a) * r * .78, 5.2, 5.2, i % 2 ? dk : lt); }
+  E(g, W, R, -4, 8, 21, 14, dk, NE); E(g, W, R, -6, 4, 14, 8, lt, NE);
+  limb(g, W, R, -9, 15, 21 - Math.max(0, Math.sin(t)) * 1.5, 3.2, '#f2d3b0'); limb(g, W, R, 6, 15, 21 - Math.max(0, Math.sin(t + 2)) * 1.5, 3.2, '#f2d3b0');
+  E(g, W, R, 18, 7, 11, 10.5, '#f2d3b0'); E(g, W, R, 27, 9, 2.6, 2.2, DK, NE); eye(g, W, 19, 3, 2.3); cheek(g, W, R, 19, 11, 2.6); E(g, W, R, 12, -2, 3.6, 3.2, '#f2d3b0'); smile(g, W, R, 24, 13, 1.6);
+}
+function drawPlanet(g, W, c, R) {
+  const [a, b] = c.pal, rg = (back) => { g.save(); g.translate(0, 6); g.rotate(-.22); g.beginPath(); g.ellipse(0, 0, 30, 7, 0, back ? Math.PI : 0, back ? 6.283 : Math.PI); g.lineWidth = 4; g.lineCap = 'round'; g.strokeStyle = W.c(b); g.globalAlpha = W.a; g.stroke(); g.restore(); };
+  rg(true); E(g, W, R, 0, 0, 17, 17, a);
+  E(g, W, R, 8, -9, 5.5, 4, deep(a, .14), NE); E(g, W, R, -9, 8, 4, 3, deep(a, .14), NE); E(g, W, R, -7, -10, 4, 2.4, tint(a, .5), NE);
+  eye(g, W, -5, -4, 1.8); eye(g, W, 5, -4, 1.8); smile(g, W, R, 0, 0, 2.2); cheek(g, W, R, -9.5, 0, 2.2); cheek(g, W, R, 9.5, 0, 2.2);
+  rg(false);
+}
+function drawAlien(g, W, c, R) {                       // 外星小朋友：一顆圓圓的綠色小豆子
+  const sw = Math.sin(c.clock * 3) * 2, g1 = '#a9dc9a';
+  line(g, W, [[-6, -14], [-9 - sw, -23]], R, false, .5, '#6fae6a'); line(g, W, [[6, -14], [9 + sw, -23]], R, false, .5, '#6fae6a'); E(g, W, R, -9 - sw, -24, 2.8, 2.8, '#f6a9ba', NE); E(g, W, R, 9 + sw, -24, 2.8, 2.8, '#f6a9ba', NE);
+  limb(g, W, R, -5, 14, 22, 3.2, '#8fcb88'); limb(g, W, R, 5, 14, 22, 3.2, '#8fcb88'); E(g, W, R, -14, 4 + sw * .4, 3, 4.5, '#8fcb88'); E(g, W, R, 14, 4 - sw * .4, 3, 4.5, '#8fcb88');
+  E(g, W, R, 0, 2, 15, 16, g1); E(g, W, R, -5, -6, 4.5, 3, tint(g1, .5), NE);
+  for (const sd of [-1, 1]) { E(g, W, R, sd * 6, -1, 4.6, 4.9, '#ffffff', NE); E(g, W, R, sd * 6 + sd * .8, -.5, 2.5, 2.8, DK, NE); E(g, W, R, sd * 6 + sd * 1.6, -1.8, 1, 1, '#ffffff', NE); cheek(g, W, R, sd * 10.5, 7, 2.2); }
+  smile(g, W, R, 0, 7, 2.4);
+}
+function drawSatellite(g, W, c, R) {
+  for (const sd of [-1, 1]) { line(g, W, [[sd * 8, 0], [sd * 14, 0]], R, false, .8, '#aeb7c4'); shape(g, W, rrPoly(sd > 0 ? 14 : -28, -9, sd > 0 ? 28 : -14, 9, 4), '#6f9fd4', R, FL); line(g, W, [[sd * 21, -8], [sd * 21, 8]], R, false, .22, '#bfe3f4'); line(g, W, [[sd * 15, 0], [sd * 27, 0]], R, false, .22, '#bfe3f4'); }
+  g.save(); g.translate(0, -10); g.rotate(-.5); E(g, W, R, 0, -3, 6, 3.6, '#e6e9ef'); g.restore(); line(g, W, [[0, -9], [-1, -13]], R, false, .4, '#aeb7c4');
+  shape(g, W, rrPoly(-9, -9, 9, 9, 5), '#f6c85a', R, FL); eye(g, W, -3.3, -1, 1.7); eye(g, W, 3.3, -1, 1.7); smile(g, W, R, 0, 3.5, 2); cheek(g, W, R, -6, 3, 1.5); cheek(g, W, R, 6, 3, 1.5);
+}
+function drawLantern(g, W, c, R) {
+  g.scale(1.45, 1.45);
+  g.save(); g.globalAlpha = W.a * .35; const gr = g.createRadialGradient(0, 0, 2, 0, 0, 30); gr.addColorStop(0, W.c('#f6dca6')); gr.addColorStop(1, 'rgba(246,220,166,0)');
+  g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 30, 0, 6.283); g.fill(); g.restore();
+  const fl = Math.sin(c.clock * 7) * 1.2;
+  shape(g, W, poly([[-9, -12], [9, -12], [12, 10], [-12, 10]], R), '#f9c46a', R, FL); shape(g, W, poly([[-10, -4], [10, -4], [11, 1], [-11, 1]], R), '#f08c4a', R, NE);
+  shape(g, W, poly([[-7, -16], [7, -16], [9, -12], [-9, -12]], R), '#f6a9ba', R, FL); E(g, W, R, 0, 13 + fl * .3, 2.8, 4 + fl, '#fbe08a', NE);
+  eye(g, W, -3.5, 5, 1.4); eye(g, W, 3.5, 5, 1.4); line(g, W, [[0, 15], [0, 22]], R, false, .3, '#c98f5a');
+}
+
+const Lib = {
+  guineaPig: { id: 'guineaPig', name: '天竺鼠', n: 3, band: [.80, .92], speed: [12, 24], size: [1.0, 1.35], hop: [3, 4.5],
+    pal: [['#f4e6d2', '#b9825a'], ['#efe0cf', '#e2a56a'], ['#d9c7b4', '#7a5a46'], ['#f8f2ea', '#c9956a']], draw: drawPig },
+  babyPig: { id: 'babyPig', name: '爆米花小天竺鼠', n: 2, band: [.82, .92], speed: [20, 36], size: [.6, .78], hop: [34, 3.2],
+    pal: [['#fbf0dc', '#eab07a'], ['#f6e6d6', '#cf9a72']], draw: drawBabyPig },
+  butterfly: { id: 'butterfly', name: '蝴蝶', n: 2, band: [.12, .55], speed: [22, 40], size: [.8, 1.2], wave: [26, 1.6], noFlip: true,
+    pal: [['#f4a9bd', '#fbd98e'], ['#9cc7ee', '#cdb8ee'], ['#a9dc9a', '#fbe08a'], ['#fbc27a', '#f4a0b4']], draw: drawButterfly },
+  seed: { id: 'seed', name: '蒲公英種子', n: 4, band: [.3, 1], speed: [8, 18], vy: -12, size: [.7, 1.1], sway: [14, .8], noFlip: true,
+    pal: [['#ffffff', '#ffffff']], draw: drawSeed },
+  sparrow: { id: 'sparrow', name: '小鳥', n: 2, band: [.1, .4], speed: [40, 70], size: [.8, 1.1], wave: [16, 1.1],
+    pal: [['#c9a27a', '#8f6a48'], ['#d9b48c', '#9c7450'], ['#b9a898', '#7d6a5a']], draw: drawSparrow },
+  chick: { id: 'chick', name: '小雞', n: 4, band: [.82, .94], speed: [14, 30], size: [.7, .95], hop: [5, 6],
+    pal: [['#fbdc5e', '#f2b240'], ['#fde48a', '#f4bd56']], draw: drawChick },
+  sheep: { id: 'sheep', name: '綿羊', n: 2, band: [.74, .84], speed: [8, 15], size: [1.0, 1.3], hop: [2, 3],
+    pal: [['#fdfaf2', '#6e4f44'], ['#f8f2e6', '#5a4038']], draw: drawSheep },
+  cow: { id: 'cow', name: '乳牛', n: 2, band: [.72, .8], speed: [6, 11], size: [1.05, 1.35], hop: [1.5, 2.5],
+    pal: [['#fdfdfb', '#34323a'], ['#faf6ee', '#4a3a36']], draw: drawCow },
+  fish: { id: 'fish', name: '小魚', n: 6, band: [.12, .72], speed: [26, 60], size: [.7, 1.2], wave: [10, 1.2],
+    pal: [['#f7a58f', '#f08a78'], ['#8fc7ee', '#6aa9db'], ['#f9d56e', '#f2b640'], ['#b9a4ee', '#9a86d9'], ['#8fd6a8', '#6bbf8c']], draw: drawFish },
+  jelly: { id: 'jelly', name: '水母', n: 3, band: [.15, .6], speed: [3, 9], size: [.8, 1.3], wave: [22, .7], noFlip: true,
+    pal: [['#f6a9ba', '#f08aa4'], ['#a9c4f2', '#86a6e6'], ['#c9b3f0', '#aa94e3']], draw: drawJelly },
+  turtle: { id: 'turtle', name: '海龜', n: 1, band: [.3, .6], speed: [12, 20], size: [1.1, 1.4], wave: [14, .5],
+    pal: [['#9ccf7a', '#b9dc92']], draw: drawTurtle },
+  seahorse: { id: 'seahorse', name: '海馬', n: 2, band: [.3, .65], speed: [3, 8], size: [.8, 1.1], wave: [12, 1.3], noFlip: true,
+    pal: [['#f7c27a', '#f0a85a'], ['#f6a9ba', '#ee8aa4']], draw: drawSeahorse },
+  crab: { id: 'crab', name: '螃蟹', n: 2, band: [.87, .95], speed: [10, 20], size: [.8, 1.1], hop: [1.5, 5], noFlip: true,
+    pal: [['#f08a78', '#e8705f']], draw: drawCrab },
+  whale: { id: 'whale', name: '鯨魚', n: 1, band: [.18, .38], speed: [7, 11], size: [.95, 1.2], wave: [10, .35],
+    pal: [['#bdcfda', '#e8eef0'], ['#c6c7dc', '#ececf3']], draw: drawWhale },
+  bubble: { id: 'bubble', name: '泡泡', n: 8, band: [.2, 1], speed: [0, 0], vy: -34, size: [.5, 1.3], sway: [7, 1.4], noFlip: true,
+    pal: [['#ffffff', '#ffffff']], draw: drawBubble }
+};
+
+/* =====================================================================
+   場景背景（靜態景物：吵雜時褪色，安靜時恢復色彩並緩慢擺動）
+   ===================================================================== */
+function at(g, W, x, y, sc, fn) { const o = W.lw; g.save(); g.translate(x, y); g.scale(sc, sc); W.lw = 1.3 / sc; fn(); W.lw = o; g.restore(); }
+
+/* ===== 統一的扁平場景背景（純色色塊、俐落邊界、低飽和） ===== */
+function fin(g, W, R, x, y, rx, ry, rot, col) { g.save(); g.translate(x, y); g.rotate(rot); E(g, W, R, 0, 0, rx, ry, col); g.restore(); }
+function hillShape(g, W, R, w, h, base, amp, col, seed) { const p = []; for (let i = 0; i <= 8; i++) p.push([i / 8 * w, base + Math.sin(i * 1.1 + seed) * amp]); shape(g, W, landPts(p, h), col, R, { top: p.length }); }
+function thick(g, W, pts, wd, col) { g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = wd; g.strokeStyle = W.c(col); g.globalAlpha = W.a; path(g, pts, false); g.stroke(); g.restore(); }
+
+function decorGuinea(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(11), fy = h * .74, P = (a) => poly(a, R), NG = { noGrad: 1 };
+  shape(g, W, landPts([[-30, h * .56], [w + 30, h * .56]], h), '#efe0c9', R, { top: 2 });
+  const y0 = h * .09, sag = h * .045, flags = ['#e8b9b4', '#bcd2c0', '#bdd0e0', '#eed9a0'];
+  line(g, W, [[-10, y0], [w * .25, y0 + sag], [w * .5, y0 + sag * 1.15], [w * .75, y0 + sag], [w + 10, y0]], R, false, .6, '#b5a591');
+  for (let i = 0; i < 12; i++) { const f = (i + .7) / 12.4, x = f * w, y = y0 + Math.sin(f * Math.PI) * sag * 1.1 + 2, sw = Math.sin(t * 1.6 + i) * 3 * ve;
+    at(g, W, x, y, s, () => shape(g, W, P([[-10, 0], [10, 0], [sw, 24]]), flags[i % 4], R, NG)); }
+  at(g, W, w * .5, h * .34, s * 1.3, () => {
+    shape(g, W, P([[-56, -46], [56, -46], [56, 46], [-56, 46]]), '#f7efe2', R, NG); shape(g, W, P([[-47, -37], [47, -37], [47, 37], [-47, 37]]), '#cfe3ee', R, NG);
+    shape(g, W, blob(22, -14, 9, 9, R, 0, 10), '#f6e2a6', R, NG); shape(g, W, blob(-16, 9, 15, 6, R, 0, 10), '#f6fbfd', R, NG);
+    line(g, W, [[0, -37], [0, 37]], R, false, 1.2, '#f7efe2'); line(g, W, [[-47, 0], [47, 0]], R, false, 1.2, '#f7efe2');
+    shape(g, W, P([[-62, -50], [-30, -50], [-38, 50], [-62, 50]]), '#e8b9b4', R, NG); shape(g, W, P([[62, -50], [30, -50], [38, 50], [62, 50]]), '#e8b9b4', R, NG);
+  });
+  const fp = [[-30, fy]]; for (let x = 0; x <= w + 40; x += w / 8) fp.push([x, fy + (R() - .5) * 8]);
+  shape(g, W, landPts(fp, h), '#e8d7ab', R, { top: fp.length });
+  for (let i = 0; i < 46; i++) { const x = R() * w, y = fy + 10 + R() * (h - fy - 12); at(g, W, x, y, s, () => line(g, W, [[0, 0], [7, -3], [16, 1]], R, false, .5, '#d4ba84')); }
+  at(g, W, w * .16, fy + (h - fy) * .5, s * 1.6, () => {
+    shape(g, W, P([[-80, 0], [-80, -66], [80, -66], [80, 0]]), '#d8a977', R, NG);
+    for (const x of [-52, -26, 26, 52]) line(g, W, [[x, -4], [x, -60]], R, false, .35, '#c4935f');
+    shape(g, W, P([[-98, -62], [0, -124], [98, -62]]), '#c27c66', R, NG);
+    shape(g, W, blob(0, -36, 24, 24, R, 0, 12), '#7a4f40', R, NG); shape(g, W, P([[-24, -36], [24, -36], [24, 0], [-24, 0]]), '#7a4f40', R, NG);
+    shape(g, W, blob(0, -92, 7, 7, R, 0, 8), '#f6e2a6', R, NG);
+  });
+  at(g, W, w * .83, fy + 16, s * 1.2, () => {
+    shape(g, W, P([[-16, -22], [16, -22], [12, 0], [-12, 0]]), '#c98468', R, NG);
+    for (const [x, y, rx, ry, r, col] of [[0, -42, 7, 20, 0, '#8fb98a'], [-14, -34, 6, 16, -.7, '#a3c59a'], [14, -34, 6, 16, .7, '#a3c59a']]) fin(g, W, R, x, y, rx, ry, r, col);
+  });
+  at(g, W, w * .93, h * .4, s, () => {
+    line(g, W, [[-22, -44], [-22, 14]], R, false, .7, '#c4b49e'); shape(g, W, P([[-12, -44], [12, -44], [12, 26], [-12, 26]]), '#d3e5ee', R, NG);
+    shape(g, W, P([[-12, -8], [12, -8], [12, 26], [-12, 26]]), '#b9d6e4', R, NG); shape(g, W, P([[-7, -56], [7, -56], [7, -44], [-7, -44]]), '#b3aa9c', R, NG); line(g, W, [[-3, 26], [-4, 40], [-12, 42]], R, false, .6, '#b3aa9c');
+  });
+  at(g, W, w * .56, fy + (h - fy) * .42, s, () => { shape(g, W, blob(0, 0, 26, 12, R, 0, 12), '#c98468', R, NG); for (const [x, y] of [[-10, -3], [-2, -5], [8, -3], [2, -1]]) shape(g, W, blob(x, y, 3.4, 3, R, 0, 6), '#a8744f', R, NG); });
+  at(g, W, w * .4, fy + (h - fy) * .72, s, () => { for (const [x, y, r] of [[-10, 0, 13], [8, -3, 14], [0, 5, 12]]) shape(g, W, blob(x, y, r, r * .8, R, 0, 10), ['#b3d1a2', '#a3c593', '#bdd9ae'][((x + 20) / 10 | 0) % 3], R, NG); });
+}
+function decorOcean(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(37), sy = h * .88, NG = { noGrad: 1 };
+  g.save(); g.fillStyle = W.c('#ffffff');
+  for (let i = 0; i < 5; i++) { const x = w * (.08 + i * .22) + Math.sin(t * .3 + i) * 20 * ve; g.globalAlpha = W.a * .12; g.beginPath(); g.moveTo(x - 30, 0); g.lineTo(x + 30, 0); g.lineTo(x + 140 * s, h); g.lineTo(x - 70 * s, h); g.fill(); }
+  g.restore();
+  hillShape(g, W, R, w, h, h * .72, h * .03, '#8fbdc8', 2); hillShape(g, W, R, w, h, h * .8, h * .025, '#7fb0bd', 6);
+  const sp = [[-30, sy]]; for (let i = 0; i <= 8; i++) sp.push([i / 8 * w, sy + Math.sin(i * 1.7) * 6]);
+  shape(g, W, landPts(sp, h), '#e9dbb4', R, { top: sp.length });
+  at(g, W, w * .1, sy + 8, s, () => { shape(g, W, blob(0, -14, 44, 26, R, 0, 12), '#a9b8c0', R, NG); shape(g, W, blob(38, -6, 24, 15, R, 0, 10), '#bcc8ce', R, NG); });
+  at(g, W, w * .84, sy + 6, s * 1.2, () => {
+    for (const [dx, hh, col] of [[-22, 46, '#e8a9a4'], [0, 66, '#eec09a'], [22, 40, '#d9a3bd']]) { thick(g, W, [[dx, 0], [dx, -hh]], 9, col); thick(g, W, [[dx, -hh * .45], [dx - 11, -hh * .7]], 7, col); thick(g, W, [[dx, -hh * .6], [dx + 11, -hh * .85]], 7, col); } });
+  at(g, W, w * .5, sy + (h - sy) * .6, s, () => shape(g, W, blob(0, 0, 22, 14, R, 0, 12), '#e6b9a6', R, NG));
+  at(g, W, w * .3, sy + (h - sy) * .7, s, () => { shape(g, W, blob(0, 0, 12, 9, R, 0, 10), '#f1e6d4', R, NG); for (const x of [-5, 0, 5]) line(g, W, [[x, 3], [x * .4, -6]], R, false, .3, '#d9c7ad'); });
+  for (let i = 0; i < 10; i++) { const x = w * (.04 + i * .1) + (R() - .5) * 30, hh = (70 + R() * 90) * s, ph = R() * 6, pts = [];
+    for (let k = 0; k <= 5; k++) pts.push([x + Math.sin(t * 1.1 + ph + k * .7) * (k * 5.5) * s * ve, sy + 10 - hh * k / 5]); thick(g, W, pts, 9 * s, i % 2 ? '#74b992' : '#62a984'); }
+  for (let i = 0; i < 14; i++) { const x = w * ((i * .137 + .05) % 1), sp2 = 10 + (i % 5) * 4, y = h - ((t * sp2 * s + i * h / 14 * 1.7) % (h * 1.05)), r = (3 + (i % 4) * 1.6) * s;
+    g.save(); g.globalAlpha = W.a * .6; g.strokeStyle = W.c('#ffffff'); g.fillStyle = W.c('#ffffff'); g.lineWidth = 1.4; g.beginPath(); g.arc(x + Math.sin(t + i) * 5 * ve, y, r, 0, 6.283); g.globalAlpha = W.a * .18; g.fill(); g.globalAlpha = W.a * .6; g.stroke(); g.restore(); }
+}
+function decorForest(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(51), gy = h * .78;
+  g.save(); g.fillStyle = W.c('#ffffff');
+  for (let i = 0; i < 3; i++) { const x = w * (.2 + i * .3) + Math.sin(t * .3 + i) * 15 * ve; g.globalAlpha = W.a * .13; g.beginPath(); g.moveTo(x - 20, 0); g.lineTo(x + 30, 0); g.lineTo(x + 140 * s, gy); g.lineTo(x - 60 * s, gy); g.fill(); }
+  g.restore();
+  hillShape(g, W, R, w, h, h * .55, h * .035, '#b4d1b0', 3);
+  for (let i = 0; i < 9; i++) at(g, W, w * (.03 + i * .115) + (R() - .5) * 20, h * (.56 + (i % 3) * .01), s * (.7 + (i % 3) * .12), () => drawTree(g, W, R, i % 3 === 1 ? 1 : 0, i % 3 === 1 ? ['#a9cf8a', '#95c27d'] : ['#5f9f86', '#52907a']));
+  hillShape(g, W, R, w, h, h * .66, h * .035, '#a3c796', 8);
+  shape(g, W, landPts([[-100, gy], [w * .2, gy - 4], [w * .5, gy - 7], [w * .8, gy - 3], [w + 100, gy]], h), '#9ccb7e', R, { top: 5 });
+  at(g, W, w * .06, gy + 40, s * 2, () => drawTree(g, W, R, 1, ['#97c98a', '#80b87c'])); at(g, W, w * .95, gy + 46, s * 2.2, () => drawTree(g, W, R, 0, ['#3f8d6c', '#357e60']));
+  for (let i = 0; i < 16; i++) { const x = R() * w, y = gy + 14 + R() * (h - gy - 20); at(g, W, x, y, s, () => line(g, W, [[-6, 0], [-3, -9], [0, -2], [3, -10], [6, 0]], R, false, .75, '#7fb868')); }
+  for (let i = 0; i < 5; i++) { const x = w * (.15 + R() * .7), y = gy + 26 + R() * (h - gy - 38);
+    at(g, W, x, y, s * 1.2, () => { shape(g, W, poly([[-4, 0], [4, 0], [3, -10], [-3, -10]], R), '#f3ece1', R, { noGrad: 1 }); shape(g, W, blob(0, -12, 12, 8, R, 0, 10), ['#d9776a', '#e0a35e', '#b99ad0'][i % 3], R, { noGrad: 1 }); for (const dx of [-5, 3]) shape(g, W, blob(dx, -13, 1.8, 1.6, R, 0, 6), '#fbf3e6', R, { noGrad: 1 }); }); }
+}
+function decorSpace(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(77), NG = { noGrad: 1 };
+  for (const [x, y, r, col] of [[.3, .35, 170, '#8a86be'], [.72, .6, 210, '#7c9cc2'], [.55, .15, 130, '#b090b6']]) { g.save(); g.globalAlpha = W.a * .28; g.fillStyle = W.c(col); path(g, blob(w * x, h * y, r * s, r * .62 * s, R, .1, 10), true); g.fill(); g.restore(); }
+  for (let i = 0; i < 70; i++) { const x = R() * w, y = R() * h, r = (.7 + R() * 1.5) * s, tw = .5 + .5 * Math.sin(t * 2 + i);
+    g.save(); g.globalAlpha = W.a * (.45 + .5 * tw * ve); g.fillStyle = W.c('#f7f3e6'); g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill(); g.restore(); }
+  for (let i = 0; i < 6; i++) at(g, W, R() * w, R() * h * .7, s, () => shape(g, W, poly(star5(0, 0, 7, 2.6, 0), R), '#f2e3a6', R, NG));
+  at(g, W, w * .84, h * .22, s, () => { shape(g, W, blob(0, 0, 36, 36, R, 0, 14), '#d6a99a', R, NG); for (const y of [-12, 4, 16]) shape(g, W, blob(0, y, Math.sqrt(1296 - y * y) * .92, 3, R, 0, 10), '#c5978a', R, NG); });
+  const mp = []; for (let i = 0; i <= 8; i++) mp.push([i / 8 * w, h * .86 - Math.sin(i / 8 * Math.PI) * h * .06]);
+  shape(g, W, landPts(mp, h), '#cfcadb', R, { top: mp.length });
+  for (const [x, y, rx, ry] of [[.18, .93, 40, 11], [.5, .91, 56, 13], [.78, .95, 34, 9], [.34, .97, 22, 6]]) at(g, W, w * x, h * y, s, () => shape(g, W, blob(0, 0, rx, ry, R, 0, 12), '#b9b3cb', R, NG));
+}
+function decorSunrise(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(91), hz = h * .64, NG = { noGrad: 1 };
+  const sy = lerp(hz + 70 * s, h * .3, ve), sx = w * .5;
+  at(g, W, sx, sy, s, () => { for (const [r, col, a] of [[120, '#f6d2b8', .35], [92, '#f4c3a6', .5], [66, '#f0a98a', 1]]) { g.save(); g.globalAlpha = W.a * a; g.fillStyle = W.c(col); g.beginPath(); g.arc(0, 0, r, 0, 6.283); g.fill(); g.restore(); } });
+  for (let i = 0; i < 3; i++) { const x = ((w * (.1 + i * .35) + t * (4 + i * 2)) % (w + 400)) - 200, y = h * (.16 + i * .09);
+    at(g, W, x, y, s, () => { shape(g, W, blob(0, 0, 90, 9, R, 0, 12), '#f8e6dc', R, NG); shape(g, W, blob(40, 12, 54, 7, R, 0, 12), '#f3d6cf', R, NG); }); }
+  hillShape(g, W, R, w, h, hz - 28, h * .05, '#c3a9bf', 4); hillShape(g, W, R, w, h, hz - 6, h * .035, '#a98fae', 9);
+  shape(g, W, landPts([[-100, hz], [w + 100, hz]], h), '#9fb7c9', R, { top: 2 });
+  g.save(); g.lineCap = 'round'; g.lineWidth = 3 * s; g.strokeStyle = W.c('#f7d9b9');
+  for (let i = 0; i < 9; i++) { const y = hz + 12 * s + i * 17 * s * (1 + i * .05), l = (42 - i * 3) * s * (.6 + .4 * ve), o = Math.sin(t * 1.4 + i) * 8 * s; g.globalAlpha = W.a * .7; g.beginPath(); g.moveTo(sx - l + o, y); g.lineTo(sx + l + o, y); g.stroke(); }
+  g.restore();
+}
+function decorCloudBirds(g, Z) {
+  const { w, h, s, t, W, ve } = Z, R = rng(63), NG = { noGrad: 1 };
+  at(g, W, w * .16, h * .17, s, () => { shape(g, W, blob(0, 0, 50, 50, R, 0, 16), '#f8eccb', R, NG); shape(g, W, blob(0, 0, 32, 32, R, 0, 14), '#f5dc9c', R, NG); });
+  for (let i = 0; i < 5; i++) { const x = ((w * (i * .26) + t * (3 + i)) % (w + 400)) - 200, y = h * (.18 + (i * .17) % .5), k = s * (1.2 + (i % 3) * .5); at(g, W, x, y, k, () => drawCloud(g, W, R, 118, 38)); }
+  for (const [base, amp, col, ph] of [[.86, .035, '#e3ebf2', 1], [.92, .03, '#f6f4ee', 4]]) { const p = []; for (let i = 0; i <= 14; i++) p.push([i / 14 * w, h * base - Math.abs(Math.sin(i * .9 + ph)) * h * amp]); shape(g, W, landPts(p, h), col, R, { top: p.length }); }
+}
+
+function decorFarm(g, E) {
+  const { w, h, s, t, W, ve } = E, R = rng(23), gy = h * .7;
+  // 太陽（扁平：兩圈圓）
+  at(g, W, w * .86, h * .14, s, () => { shape(g, W, blob(0, 0, 54, 54, R, 0, 20), '#fbefc4', R, { noEdge: 1 }); shape(g, W, blob(0, 0, 32, 32, R, 0, 20), '#f7dc8c', R, { noEdge: 1 }); });
+  // 雲
+  for (let i = 0; i < 4; i++) { const x = ((w * (.08 + i * .27) + t * (6 + i * 2)) % (w + 320)) - 160, y = h * (.1 + (i % 2) * .1);
+    at(g, W, x, y, s * (1 + (i % 2) * .3), () => drawCloud(g, W, R, 110, 36)); }
+  // 山丘
+  const hill = (base, amp, col, seed) => { const r = rng(seed), p = []; for (let i = 0; i <= 8; i++) p.push([i / 8 * w, base + Math.sin(i * 1.1 + seed) * amp]); shape(g, W, landPts(p, h), col, R, { top: p.length }); };
+  hill(h * .5, h * .035, '#a9dcc0', 3);
+  // 松樹（站在遠山上）
+  for (const [x, y, k] of [[.05, .56, 1.2], [.1, .6, .9], [.58, .53, 1], [.97, .5, 1.4], [.9, .54, 1]]) at(g, W, w * x, h * y, s * k, () => drawTree(g, W, R, 0));
+  hill(h * .6, h * .04, '#b8e08f', 8);
+  // 穀倉
+  at(g, W, w * .8, h * .69, s * 1.5, () => {
+    const red = '#ee6f5d', cream = '#fbf6ee';
+    shape(g, W, poly([[-70, -66], [-52, -98], [-26, -122], [26, -122], [52, -98], [70, -66], [62, -66], [46, -94], [22, -114], [-22, -114], [-46, -94], [-62, -66]], R), '#c4cad2', R, { noGrad: 1 });
+    shape(g, W, poly([[-62, 0], [-62, -70], [-46, -96], [-22, -114], [22, -114], [46, -96], [62, -70], [62, 0]], R), red, R);
+    for (const x of [-48, -36, 36, 48]) line(g, W, [[x, -4], [x, -64]], R, false, .35, '#d95b4a');
+    shape(g, W, poly([[-32, 0], [-32, -54], [32, -54], [32, 0]], R), cream, R, { noGrad: 1 });
+    shape(g, W, poly([[-25, -3], [-25, -48], [25, -48], [25, -3]], R), red, R, { noGrad: 1, noEdge: 1 });
+    line(g, W, [[-25, -3], [25, -48]], R, false, 1, cream); line(g, W, [[25, -3], [-25, -48]], R, false, 1, cream);
+    shape(g, W, poly([[-15, -100], [15, -100], [15, -70], [-15, -70]], R), cream, R, { noGrad: 1 });
+    shape(g, W, poly([[-11, -96], [11, -96], [11, -74], [-11, -74]], R), '#8a5a4a', R, { noGrad: 1, noEdge: 1 });
+    line(g, W, [[0, -96], [0, -74]], R, false, .8, cream); line(g, W, [[-11, -85], [11, -85]], R, false, .8, cream);
+  });
+  // 地面
+  shape(g, W, landPts([[-30, gy], [w * .3, gy - 8], [w * .6, gy + 4], [w + 30, gy - 2]], h), '#9ed67a', R, { top: 4 });
+  // 柵欄（淺木色）
+  const fy = gy + 2; for (let x = w * .3; x < w * .7; x += 70 * s) at(g, W, x, fy, s, () => line(g, W, [[0, 4], [0, -46]], R, false, 3.2, '#f0d9a2'));
+  line(g, W, [[w * .3, fy - 34], [w * .5, fy - 36], [w * .7, fy - 32]], R, false, 2.6, '#f0d9a2'); line(g, W, [[w * .3, fy - 16], [w * .5, fy - 18], [w * .7, fy - 14]], R, false, 2.6, '#f0d9a2');
+  // 池塘
+  at(g, W, w * .17, h * .88, s, () => {
+    const pw = Math.min(w * .17, 330) / s, ph = Math.min(h * .1, 90) / s;
+    shape(g, W, blob(0, 0, pw, ph, R, 0, 20), '#7cc4f0', R, { noGrad: 1 }); shape(g, W, blob(-pw * .1, -ph * .1, pw * .78, ph * .72, R, 0, 20), '#8fd0f4', R, { noGrad: 1, noEdge: 1 });
+    for (const [x, y, r] of [[.35, -.2, 22], [-.45, .25, 28]]) { shape(g, W, blob(pw * x, ph * y, r, r * .55, R, 0, 12), '#69bb70', R, { noGrad: 1 }); line(g, W, [[pw * x, ph * y], [pw * x + r * .8, ph * y - 2]], R, false, .5, '#8fd0f4'); }
+    for (const [x, y] of [[-.1, .3], [.5, .1], [-.55, -.2]]) line(g, W, [[pw * x - 16, ph * y], [pw * x, ph * y + 4], [pw * x + 16, ph * y]], R, false, .6, '#ffffff');
+  });
+  // 草叢與花
+  for (let i = 0; i < 18; i++) { const x = R() * w, y = gy + 14 + R() * (h - gy - 18), sw = Math.sin(t * 1.4 + i) * 2 * ve;
+    at(g, W, x, y, s, () => { line(g, W, [[-6, 0], [-3 + sw, -9], [0, -2], [3 + sw, -10], [6, 0]], R, false, .75, '#7fc062'); }); }
+  for (let i = 0; i < 9; i++) { const x = R() * w, y = gy + 24 + R() * (h - gy - 34);
+    at(g, W, x, y, s, () => { line(g, W, [[0, 0], [0, -13]], R, false, .7, '#7fc062'); shape(g, W, blob(0, -17, 5, 5, R, 0, 8), ['#f6b4c0', '#fbe08a', '#c9b8ee'][i % 3], R, { noGrad: 1, noEdge: 1 }); }); }
+}
+
+
+/* =====================================================================
+   場景註冊（要新增風格就呼叫 registerScene，詳見 README）
+   ===================================================================== */
+const SCENES = {};
+function registerScene(def) {
+  if (!def || !def.id) return;
+  SCENES[def.id] = def;
+  refreshSceneSelect();
+  if (typeof recalcDiversityMax === 'function') recalcDiversityMax();
+}
+
+/* =====================================================================
+   新增場景：森林、太空、日出、雲上的鳥
+   ===================================================================== */
+function drawFeather(g, W, c, R) {                     // 圓潤的小羽毛：水滴形羽片＋細羽軸
+  g.rotate(Math.sin(c.clock * .8 + c.ph) * .9);
+  const O = { noGrad: 1 };
+  shape(g, W, poly([[-14, 2], [-4, -7], [9, -6], [15, -1], [4, 6], [-8, 6]], R), c.pal[0], R, O);
+  shape(g, W, poly([[-6, 1], [2, -4], [10, -2], [3, 3]], R), shade(c.pal[0], '#ffffff', .5), R, { noGrad: 1, noEdge: 1 });
+  line(g, W, [[-19, 6], [-6, 1], [14, -1]], R, false, .5, shade(c.pal[0], '#6b5560', .4));
+}
+function drawPlane(g, W, c, R) {                       // 紙飛機：兩片摺面＋小圓點
+  const O = { noGrad: 1 };
+  shape(g, W, poly([[-18, -6], [20, 0], [-8, 2]], R), c.pal[0], R, O);
+  shape(g, W, poly([[-18, -6], [-8, 2], [-14, 8]], R), shade(c.pal[0], '#6b5560', .16), R, O);
+  shape(g, W, poly([[-8, 2], [20, 0], [-14, 8]], R), shade(c.pal[0], '#ffffff', .35), R, O);
+}
+
+Object.assign(Lib, {
+  rabbit: { id: 'rabbit', name: '兔子', n: 3, band: [.82, .93], speed: [10, 22], size: [.8, 1.1], hop: [20, 3.2],
+    pal: [['#f4ece2', '#f6a9ba'], ['#d9b99a', '#f6a9ba']], draw: drawRabbit },
+  deer: { id: 'deer', name: '小鹿', n: 2, band: [.74, .84], speed: [6, 12], size: [1.0, 1.3], hop: [1.5, 2],
+    pal: [['#e6cfb2', '#f5ecdc'], ['#dcc1a2', '#f0e3cf']], draw: drawDeer },
+  fox: { id: 'fox', name: '狐狸', n: 1, band: [.82, .92], speed: [16, 28], size: [.9, 1.1], hop: [2, 5],
+    pal: [['#eec9a4', '#f6efe4']], draw: drawFox },
+  leaf: { id: 'leaf', name: '落葉', n: 6, band: [-.05, .8], speed: [4, 10], vy: 16, size: [.8, 1.3], sway: [26, .7], noFlip: true,
+    pal: [['#f0a35e', '#d9823f'], ['#9ccf7a', '#78b45a'], ['#f2c35e', '#e0a63e']], draw: drawLeaf },
+  rocket: { id: 'rocket', name: '火箭', n: 1, band: [.15, .6], speed: [30, 46], size: [.9, 1.2], wave: [10, .8],
+    pal: [['#f1ece4', '#e3b8b4'], ['#e8ecf2', '#b9c6dc']], draw: drawRocket },
+  ufo: { id: 'ufo', name: '飛碟', n: 1, band: [.15, .55], speed: [14, 24], size: [.9, 1.2], wave: [16, 1.1], noFlip: true,
+    pal: [['#cfd9c8', '#e3e0b8'], ['#d9cfe0', '#cdd8e6']], draw: drawUfo },
+  planet: { id: 'planet', name: '星球', n: 3, band: [.1, .85], speed: [2, 6], size: [.9, 1.8], wave: [8, .4], noFlip: true,
+    pal: [['#f0b88a', '#f6d9a0'], ['#a9c4f2', '#f6d9a0'], ['#d9b3ee', '#f6e0a0']], draw: drawPlanet },
+  star: { id: 'star', name: '星星', n: 8, band: [.04, .95], speed: [0, 2], size: [.4, .9], wave: [3, .6], noFlip: true,
+    pal: [['#f3e8b6'], ['#eed7de'], ['#dbe5ef']], draw: drawStar },
+  comet: { id: 'comet', name: '彗星', n: 1, band: [.05, .5], speed: [70, 110], size: [.8, 1.2], vy: 24, noFlip: false,
+    pal: [['#f3e8b6']], draw: drawComet },
+  balloon: { id: 'balloon', name: '熱氣球', n: 2, band: [.12, .4], speed: [5, 10], size: [.9, 1.3], wave: [14, .5], noFlip: true,
+    pal: [['#ecc7c4', '#f6e8d2'], ['#cfdcea', '#f2ecdc'], ['#d6e4cf', '#f1e4c2']], draw: drawBalloon },
+  sailboat: { id: 'sailboat', name: '帆船', n: 2, band: [.68, .82], speed: [5, 11], size: [.9, 1.3], wave: [3, 1.1],
+    pal: [['#faf6ee', '#efe4d8'], ['#f6e4de', '#f1ece4']], draw: drawSailboat },
+  gull: { id: 'gull', name: '海鷗', n: 3, band: [.15, .5], speed: [30, 55], size: [.9, 1.3], wave: [14, 1],
+    pal: [['#fbf8f2', '#9fb6cc']], draw: drawGull },
+  cloudBird: { id: 'cloudBird', name: '雲上的鳥', n: 3, band: [.15, .75], speed: [4, 10], size: [1.4, 2], wave: [6, .7],
+    pal: [['#a9cdee', '#7fa9d0'], ['#f6c7a8', '#e8a07e'], ['#d9b3ee', '#b992d9'], ['#b9e0a0', '#92c878']], draw: drawCloudBird },
+  dove: { id: 'dove', name: '白鴿', n: 2, band: [.1, .6], speed: [30, 50], size: [1.0, 1.4], wave: [14, .9],
+    pal: [['#fbf8f2', '#d6def0'], ['#f3ede4', '#cfc5b6']], draw: drawDove },
+  feather: { id: 'feather', name: '羽毛', n: 5, band: [-.05, .8], speed: [3, 9], vy: 12, size: [.7, 1.1], sway: [24, .6], noFlip: true,
+    pal: [['#f6b7c4', '#e898aa'], ['#b9d4f2', '#9bbce6'], ['#f9dc8a', '#eec060']], draw: drawFeather },
+  plane: { id: 'plane', name: '紙飛機', n: 1, band: [.15, .6], speed: [28, 42], size: [.9, 1.2], wave: [20, .9],
+    pal: [['#fff3d6', '#f6c77a'], ['#d9ecfb', '#8fc7ee']], draw: drawPlane }
+});
+
+
+
+/* =====================================================================
+   第二批物種：讓每個場景至少有 10 種可收集的生物／物品
+   ===================================================================== */
+function drawKite(g, W, c, R) {
+  const t = c.clock, [a, b] = c.pal, O = { noGrad: 1 }, Q = { noGrad: 1, noEdge: 1 };
+  g.rotate(Math.sin(t * 1.5 + c.ph) * .15); g.scale(.8, .8);
+  const tail = []; for (let k = 0; k <= 4; k++) tail.push([Math.sin(t * 2.2 + k * 1.1) * (2 + k * 1.5), 22 + k * 9]);
+  line(g, W, tail, R, false, .45, '#9a8a90');
+  for (let k = 1; k <= 3; k++) { const [x, y] = tail[k], col = k % 2 ? b : a;
+    shape(g, W, blob(x - 3.6, y, 3.8, 2.6, R, 0, 8), col, R, O); shape(g, W, blob(x + 3.6, y, 3.8, 2.6, R, 0, 8), col, R, O); shape(g, W, blob(x, y, 1.5, 1.5, R, 0, 6), shade(col, '#6b5560', .35), R, Q); }
+  shape(g, W, poly([[0, -23], [16, -2], [0, 21], [-16, -2]], R), a, R, O);
+  shape(g, W, poly([[0, -23], [16, -2], [0, 21]], R), shade(a, '#6b5560', .14), R, Q);
+  line(g, W, [[0, -21], [0, 19]], R, false, .4, shade(a, '#ffffff', .7)); line(g, W, [[-14, -2], [14, -2]], R, false, .4, shade(a, '#ffffff', .7));
+  dot(g, W, -4.5, -4, 1.4); dot(g, W, 4.5, -4, 1.4);
+  shape(g, W, blob(-8, 0, 2.6, 1.7, R, 0, 8), '#f4a0b4', R, Q); shape(g, W, blob(8, 0, 2.6, 1.7, R, 0, 8), '#f4a0b4', R, Q);
+  line(g, W, [[-2, -.5], [0, 1.5], [2, -.5]], R, false, .45);
+}
+
+Object.assign(Lib, {
+  ladybug: { id: 'ladybug', name: '瓢蟲', n: 2, band: [.8, .93], speed: [5, 10], size: [1.2, 1.8], hop: [1, 6], pal: [['#ee6f5d', '#4a3f45']], draw: drawLadybug },
+  snail: { id: 'snail', name: '蝸牛', n: 1, band: [.83, .93], speed: [1.5, 3], size: [1, 1.4], pal: [['#e6cfa8', '#d8c0b0'], ['#cfdcc0', '#e0d6c4']], draw: drawSnail },
+  bee: { id: 'bee', name: '蜜蜂', n: 2, band: [.15, .5], speed: [28, 50], size: [1, 1.4], wave: [14, 2], pal: [['#fbd860', '#5a4a40']], draw: drawBee },
+  carrot: { id: 'carrot', name: '紅蘿蔔', n: 1, band: [.85, .93], speed: [8, 14], size: [1, 1.3], hop: [14, 3], pal: [['#efc5a0']], draw: drawCarrot },
+  yarn: { id: 'yarn', name: '毛線球', n: 1, band: [.84, .93], speed: [12, 20], size: [1, 1.4], pal: [['#e8c4c0'], ['#c8d6e0'], ['#d9e0c3']], draw: drawYarn },
+  farmPig: { id: 'farmPig', name: '小豬', n: 2, band: [.8, .9], speed: [8, 14], size: [1, 1.2], hop: [1.5, 3], pal: [['#f8b5c4', '#ee93aa'], ['#f9c2cb', '#f09fb2']], draw: drawFarmPig },
+  duck: { id: 'duck', name: '鴨子', n: 2, band: [.85, .94], speed: [8, 16], size: [.8, 1], hop: [3, 5], pal: [['#fdfbf2', '#8fc1ea'], ['#f3e9cf', '#b9a37e']], draw: drawDuck },
+  cat: { id: 'cat', name: '小貓', n: 1, band: [.8, .9], speed: [14, 24], size: [.9, 1.1], hop: [2, 5], pal: [['#f0a95f', '#d98a3f'], ['#b9bcc6', '#9498a4']], draw: drawCat },
+  tractor: { id: 'tractor', name: '拖拉機', n: 1, band: [.76, .84], speed: [20, 30], size: [1.1, 1.4], hop: [1, 9], pal: [['#e5b7ae', '#c9a79c']], draw: drawTractor },
+  octopus: { id: 'octopus', name: '章魚', n: 1, band: [.35, .7], speed: [4, 9], size: [.9, 1.2], wave: [14, .9], noFlip: true, pal: [['#e8c0c8', '#d3a2b0'], ['#d7c8e6', '#bba8d2']], draw: drawOctopus },
+  dolphin: { id: 'dolphin', name: '海豚', n: 1, band: [.2, .5], speed: [30, 45], size: [1, 1.2], wave: [26, .9], pal: [['#bfd0dc', '#e8eff2']], draw: drawDolphin },
+  puffer: { id: 'puffer', name: '河豚', n: 2, band: [.2, .7], speed: [10, 20], size: [.8, 1.1], wave: [8, 1.4], pal: [['#efe0ae', '#e1c98a']], draw: drawPuffer },
+  starfish: { id: 'starfish', name: '海星', n: 2, band: [.9, .96], speed: [1, 3], size: [.8, 1.3], noFlip: true, pal: [['#efc9b6'], ['#e8cfd6'], ['#e8dcae']], draw: drawStarfish },
+  chest: { id: 'chest', name: '沉沒的寶箱', n: 1, band: [-.05, .4], speed: [2, 5], vy: 8, size: [1, 1.3], sway: [14, .6], noFlip: true, pal: [['#d6bf9c', '#bfa07c']], draw: drawChest },
+  squirrel: { id: 'squirrel', name: '松鼠', n: 1, band: [.8, .9], speed: [14, 26], size: [.9, 1.1], hop: [12, 5], pal: [['#e3bf9b', '#d4a67e']], draw: drawSquirrel },
+  owl: { id: 'owl', name: '貓頭鷹', n: 1, band: [.1, .4], speed: [8, 14], size: [1, 1.3], wave: [10, .6], noFlip: true, pal: [['#d9c5ae', '#bfa88e']], draw: drawOwl },
+  hedgehog: { id: 'hedgehog', name: '刺蝟', n: 1, band: [.85, .94], speed: [4, 9], size: [.9, 1.1], hop: [1.5, 3], pal: [['#cdb8a2', '#efe0cc']], draw: drawHedgehog },
+  acorn: { id: 'acorn', name: '橡實', n: 4, band: [-.05, .8], speed: [1, 3], vy: 20, size: [.9, 1.3], sway: [10, .8], noFlip: true, pal: [['#c9ae92', '#e7d3b0']], draw: drawAcorn },
+  astronaut: { id: 'astronaut', name: '太空人', n: 1, band: [.15, .7], speed: [4, 9], size: [1, 1.3], wave: [18, .5], noFlip: true, pal: [['#9dbad0']], draw: drawAstronaut },
+  satellite: { id: 'satellite', name: '人造衛星', n: 1, band: [.1, .5], speed: [6, 12], size: [.9, 1.3], wave: [8, .5], noFlip: true, pal: [['#d6dbe6', '#e8d6c4']], draw: drawSatellite },
+  alien: { id: 'alien', name: '外星小朋友', n: 1, band: [.2, .7], speed: [6, 12], size: [1, 1.3], wave: [16, 1], noFlip: true, pal: [['#cfe2c4', '#b5cfa8']], draw: drawAlien },
+  asteroid: { id: 'asteroid', name: '小行星', n: 3, band: [.05, .9], speed: [3, 8], size: [.8, 1.6], noFlip: true, pal: [['#cfc6bb'], ['#c7c2cc']], draw: drawAsteroid },
+  moon: { id: 'moon', name: '月牙', n: 1, band: [.1, .4], speed: [1, 3], size: [1.4, 1.9], wave: [6, .3], noFlip: true, pal: [['#f3ecc9']], draw: drawMoon },
+  constel: { id: 'constel', name: '星座', n: 1, band: [.08, .5], speed: [0, 2], size: [1.2, 1.8], noFlip: true, pal: [['#f3ecc9']], draw: drawConstel },
+  kite: { id: 'kite', name: '風箏', n: 2, band: [.1, .4], speed: [4, 10], size: [1, 1.3], wave: [16, .7], noFlip: true, pal: [['#f59aa8', '#fbd77a'], ['#86c3ee', '#fbb9a0'], ['#b9a4ee', '#a9e0b8']], draw: drawKite },
+  rowboat: { id: 'rowboat', name: '划槳小船', n: 1, band: [.7, .82], speed: [4, 9], size: [1, 1.3], wave: [3, 1.2], pal: [['#e8d3bb', '#c9b5a2']], draw: drawRowboat },
+  lantern: { id: 'lantern', name: '天燈', n: 3, band: [.3, 1], speed: [3, 8], vy: -14, size: [.9, 1.3], sway: [14, .7], noFlip: true, pal: [['#f1cfa0', '#d9a99c'], ['#eec1bd', '#e0b49a']], draw: drawLantern },
+  rainbow: { id: 'rainbow', name: '彩虹', n: 1, band: [.35, .6], speed: [2, 4], size: [1.6, 2.2], wave: [4, .4], noFlip: true, pal: [['#ffffff']], draw: drawRainbow },
+  crane: { id: 'crane', name: '紙鶴', n: 2, band: [.15, .7], speed: [16, 30], size: [1, 1.4], wave: [18, 1], pal: [['#f8c6d0', '#ee9db0'], ['#bcd8f6', '#8fb8e8']], draw: drawCrane },
+  zeppelin: { id: 'zeppelin', name: '飛船', n: 1, band: [.1, .35], speed: [6, 10], size: [1, 1.3], wave: [6, .5], pal: [['#e8dcd0', '#cdb8a8']], draw: drawZeppelin }
+});
+Lib.hen = { ...Lib.chick, draw: drawHen, id: 'hen', name: '母雞', n: 2, size: [1.2, 1.5], speed: [8, 14], pal: [['#efdcc0', '#d3b48e'], ['#f1e8dc', '#d9c7b2']] };
+Lib.clown = { ...Lib.fish, draw: drawClown, id: 'clown', name: '小丑魚', n: 2, pal: [['#eebd96', '#e6a176']] };
+Lib.jumpFish = { ...Lib.fish, id: 'jumpFish', name: '跳躍的魚', n: 2, band: [.62, .7], speed: [10, 18], wave: null, hop: [44, 1.4], pal: [['#c9dbe6', '#a9c3d4'], ['#efcfb9', '#e3b49a']] };
+Lib.jumpDolphin = { ...Lib.dolphin, id: 'dolphin', band: [.62, .7], wave: null, hop: [34, 1.1] };
+Lib.seaWhale = { ...Lib.whale, band: [.7, .78], size: [.7, .9] };
+
+/* 場景清單：越前面的物種越先出現（前 2 種是「起始物種」，其餘要靠保持安靜慢慢收集） */
+registerScene({ id: 'guinea', name: '🐹 天竺鼠的家', sky: ['#f4ebdd', '#efe2cf'], decor: decorGuinea,
+  species: [Lib.guineaPig, Lib.butterfly, Lib.babyPig, Lib.sparrow, Lib.seed, Lib.ladybug, Lib.bee, Lib.snail, Lib.carrot, Lib.yarn] });
+registerScene({ id: 'farm', name: '🐄 小農場', sky: ['#bfe3f4', '#e2f2ec'], decor: decorFarm,
+  species: [Lib.chick, Lib.sheep, Lib.cow, Lib.farmPig, Lib.duck, Lib.cat, Lib.hen, Lib.sparrow, Lib.butterfly, Lib.bee, Lib.tractor, Lib.ladybug] });
+registerScene({ id: 'ocean', name: '🐠 海洋世界', sky: ['#bfe0e6', '#8fc0cf'], decor: decorOcean,
+  species: [Lib.fish, Lib.jelly, Lib.turtle, Lib.crab, Lib.seahorse, Lib.whale, Lib.octopus, Lib.dolphin, Lib.puffer, Lib.starfish, Lib.chest, Lib.clown] });
+registerScene({ id: 'forest', name: '🌲 寧靜森林', sky: ['#dcebd8', '#eef0dc'], decor: decorForest,
+  species: [Lib.rabbit, Lib.deer, Lib.fox, Lib.squirrel, Lib.leaf, Lib.butterfly, Lib.sparrow, Lib.owl, Lib.hedgehog, Lib.acorn, Lib.bee, Lib.snail, Lib.ladybug] });
+registerScene({ id: 'space', name: '🚀 太空漫遊', sky: ['#5f6799', '#8f95c3'], decor: decorSpace,
+  species: [Lib.planet, Lib.star, Lib.rocket, Lib.ufo, Lib.comet, Lib.astronaut, Lib.satellite, Lib.alien, Lib.asteroid, Lib.moon, Lib.constel] });
+registerScene({ id: 'sunrise', name: '🌅 日出', sky: ['#ecc9c2', '#f8e5cc'], decor: decorSunrise,
+  species: [Lib.sailboat, Lib.gull, Lib.balloon, Lib.dove, Lib.kite, Lib.jumpFish, Lib.jumpDolphin, Lib.seaWhale, Lib.rowboat, Lib.lantern] });
+registerScene({ id: 'cloudbirds', name: '☁️ 雲上的鳥', sky: ['#bfdcee', '#eaf1f4'], decor: decorCloudBirds,
+  species: [Lib.cloudBird, Lib.dove, Lib.sparrow, Lib.feather, Lib.plane, Lib.balloon, Lib.kite, Lib.butterfly, Lib.crane, Lib.rainbow, Lib.zeppelin] });
+
+/* =====================================================================
+   畫布 / 動物生成 / 繪製
+   ===================================================================== */
+const cv = $('#bg'), g = cv.getContext('2d');
+let CW = 0, CH = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  CW = Math.max(2, innerWidth || document.documentElement.clientWidth || 0); CH = Math.max(2, innerHeight || document.documentElement.clientHeight || 0);
+  cv.width = CW * DPR; cv.height = CH * DPR;
+  const f = $('#fx'); if (f) { f.width = CW * DPR; f.height = CH * DPR; }
+}
+addEventListener('resize', resize); resize();
+
+let creatures = [];
+function makeCreature(sp, appear, ghost, born) {
+  const r = Math.random, dir = r() < .5 ? -1 : 1, spd = lerp(sp.speed[0], sp.speed[1], r());
+  return { sp, x: r(), y: lerp(sp.band[0], sp.band[1], r()), vx: dir * spd, dir,
+    vy: sp.vy ? sp.vy * (.7 + .6 * r()) : 0, size: lerp(sp.size[0], sp.size[1], r()),
+    pal: sp.pal[(r() * sp.pal.length) | 0], seed: (r() * 1e9) | 0, clock: r() * 100, ph: r() * 6.283,
+    appear, ghost, born: born || 0 };
+}
+/* 每個場景一開始只有 2 種「起始物種」，其餘要靠保持安靜慢慢收集 */
+function ensureStarters(sc) {
+  if (!album[sc.id] || !Object.keys(album[sc.id]).length) {
+    album[sc.id] = {}; sc.species.slice(0, 2).forEach((sp, i) => { album[sc.id][sp.id] = Date.now() - (i + 1) * 1000; });
+    store.set('album', album);
+  }
+}
+function roster(sc) {
+  ensureStarters(sc);
+  return sc.species.filter(sp => isFound(sc.id, sp.id)).sort((a, b) => album[sc.id][b.id] - album[sc.id][a.id]).slice(0, Math.max(1, S.diversity));
+}
+function build() {
+  const sc = SCENES[S.scene] || Object.values(SCENES)[0];
+  const list = roster(sc);
+  const counts = list.map(sp => Math.max(1, Math.round(sp.n * S.density)));
+  const total = counts.reduce((a, b) => a + b, 0);
+  const slots = Array.from({ length: total }, (_, i) => .12 + .8 * (i / Math.max(1, total - 1)));
+  for (let i = slots.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [slots[i], slots[j]] = [slots[j], slots[i]]; }
+  creatures = []; let idx = 0;
+  list.forEach((sp, si) => { for (let i = 0; i < counts[si]; i++) creatures.push(makeCreature(sp, slots[idx++], sp === sc.species[0] && i < 2)); });
+}
+/* 新朋友來訪：只加入新物種，不打亂其他動物 */
+function addSpecies(sp) {
+  const n = Math.max(1, Math.round(sp.n * S.density));
+  for (let i = 0; i < n; i++) { const c = makeCreature(sp, .2 + Math.random() * .2, false, performance.now()); c.x = .15 + Math.random() * .7;
+    if (!sp.vy) c.y = lerp(sp.band[0], sp.band[1], Math.random()); else c.y = clamp(c.y, .1, .9);
+    creatures.push(c); if (i === 0) fxRipple(c.x * CW, c.y * CH, SCENES[S.scene].sky[1]); }
+}
+
+let vivid = 1, sceneClock = 0;
+let dc = null, dg = null, decorAt = 0, decorScene = '';
+function render(dt, state) {
+  const target = state === 'quiet' ? 1 : 0;
+  const rate = target > vivid ? 1 / 3 : 1 / 4;                 // 漸變：變多彩約3秒，變單調約4秒
+  vivid += clamp(target - vivid, -rate * dt, rate * dt);
+  const ve = vivid * vivid * (3 - 2 * vivid);
+  const sat = .1 + .9 * ve, dtm = dt * S.speed * Math.pow(ve, 1.6);
+  sceneClock += dtm;
+  const sc = SCENES[S.scene]; if (!sc) return;
+  const s = clamp(Math.sqrt(CW * CH) / 800, .55, 1.7);
+
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const grd = g.createLinearGradient(0, 0, 0, CH);
+  grd.addColorStop(0, mix(punch(sc.sky[0]), '#ebe8e3', 1 - sat)); grd.addColorStop(1, mix(punch(sc.sky[1]), '#e0ddd8', 1 - sat));
+  g.fillStyle = grd; g.fillRect(0, 0, CW, CH);
+
+  const Wd = { a: lerp(.5, 1, ve), lw: 1.3, ink: mix('#46393a', '#aaa7a2', 1 - sat), c: h => mix(punch(h), '#bdbab4', 1 - sat) };
+  if (sc.decor) {                                   // 背景景物每 ~100ms 重畫一次到暫存畫布（景物動作很慢，肉眼看不出差別，但省下大量運算）
+    const tn = performance.now();
+    if (!dc || dc.width !== cv.width || dc.height !== cv.height) { dc = document.createElement('canvas'); dc.width = cv.width; dc.height = cv.height; dg = dc.getContext('2d'); decorAt = 0; }
+    if (tn - decorAt > 100 || decorScene !== sc.id) {
+      dg.setTransform(DPR, 0, 0, DPR, 0, 0); dg.clearRect(0, 0, CW, CH);
+      sc.decor(dg, { w: CW, h: CH, s, t: sceneClock, W: Wd, ve }); decorAt = tn; decorScene = sc.id;
+    }
+    if (dc.width > 0 && dc.height > 0) g.drawImage(dc, 0, 0, CW, CH);
+  }
+
+  for (const c of creatures) {
+    const sp = c.sp; c.clock += dtm;
+    c.x += c.vx * s * dtm / CW;
+    if (c.x > 1.12) c.x = -.12; else if (c.x < -.12) c.x = 1.12;
+    if (c.vy) { c.y += c.vy * s * dtm / CH; if (c.y < -.1) c.y = 1.02; else if (c.y > 1.1) c.y = -.08; }
+  }
+  const order = creatures.slice().sort((a, b) => a.y - b.y), nowMs = performance.now();
+  for (const c of order) {
+    const sp = c.sp;
+    const alpha = Math.max(c.ghost ? .1 : 0, smooth(c.appear - .25, c.appear, ve)) * (c.born ? clamp((nowMs - c.born) / 2600, 0, 1) : 1);
+    if (alpha < .01) continue;
+    let ox = 0, oy = 0;
+    if (sp.wave) oy += Math.sin(c.clock * sp.wave[1] + c.ph) * sp.wave[0] * s;
+    if (sp.hop) oy -= Math.abs(Math.sin(c.clock * sp.hop[1] + c.ph)) * sp.hop[0] * s;
+    if (sp.sway) ox += Math.sin(c.clock * sp.sway[1] + c.ph) * sp.sway[0] * s;
+    const k = s * c.size;
+    const W = { a: alpha, lw: 1.3 / k, ink: Wd.ink, c: Wd.c };
+    g.save();
+    g.translate(c.x * CW + ox, c.y * CH + oy);
+    g.scale((sp.noFlip ? 1 : c.dir) * k, k);
+    sp.draw(g, W, c, rng(c.seed));
+    g.restore();
+  }
+  g.globalAlpha = 1; g.fillStyle = paperPattern(); g.fillRect(0, 0, CW, CH);
+}
+
+/* =====================================================================
+   麥克風與「安靜 / 吵雜」狀態機
+   ===================================================================== */
+let AC = null, analyser = null, micBuf = null, micOn = false, level = 0, rawLevel = 0;
+let state = 'quiet', noiseAcc = 0, quietAcc = 0;
+const getAC = () => AC || (AC = new (window.AudioContext || window.webkitAudioContext)());
+const noiseDelay = () => Math.max(1, S.noiseVal * S.noiseUnit);
+const recDelay = () => Math.max(1, S.recVal * S.recUnit);
+
+async function startMic() {
+  const st = $('#micStatus');
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('此瀏覽器或網址不支援麥克風（需要 https:// 或 localhost）');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const ac = getAC(); await ac.resume();
+    analyser = ac.createAnalyser(); analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0;
+    ac.createMediaStreamSource(stream).connect(analyser);
+    micBuf = new Float32Array(analyser.fftSize); micOn = true;
+    noiseAcc = 0; quietAcc = 0; state = 'quiet';
+    $('#micStart').textContent = '🎤 麥克風運作中';
+  } catch (e) {
+    micOn = false;
+    st.textContent = '無法啟用麥克風：' + (e && e.message ? e.message : e) + '（請在瀏覽器網址列允許麥克風權限）';
+  }
+}
+function readLevel(dt) {
+  if (!micOn) return;
+  analyser.getFloatTimeDomainData(micBuf);
+  let sum = 0; for (let i = 0; i < micBuf.length; i++) sum += micBuf[i] * micBuf[i];
+  const rms = Math.sqrt(sum / micBuf.length);
+  rawLevel = clamp(20 * Math.log10(rms + 1e-8) + 90 + S.calib, 0, 110);   // 約 dB（相對值）
+  const k = 1 - Math.exp(-dt / (rawLevel > level ? .18 : .6));
+  level += (rawLevel - level) * k;
+}
+function logic(dt) {
+  readLevel(dt);
+  if (S.mode !== 'auto') { state = S.mode; return; }
+  if (!micOn) { state = 'quiet'; return; }
+  const loud = level > S.thr;
+  if (state === 'quiet') {
+    noiseAcc = loud ? noiseAcc + dt : Math.max(0, noiseAcc - dt * .5);   // 斷斷續續的聲音也會慢慢累積
+    if (noiseAcc >= noiseDelay()) { state = 'noisy'; quietAcc = 0; }
+  } else {
+    quietAcc = !loud ? quietAcc + dt : Math.max(0, quietAcc - dt);
+    if (quietAcc >= recDelay()) { state = 'quiet'; noiseAcc = 0; }
+  }
+}
+let quietRun = 0, arriveTarget = 0;
+const pickTarget = () => lerp(Math.min(S.arriveMin, S.arriveMax), Math.max(S.arriveMin, S.arriveMax), Math.random()) * 60;
+const mmss = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+function arrive() {
+  const sc = SCENES[S.scene]; if (!sc) return false;
+  const locked = sc.species.filter(sp => !isFound(sc.id, sp.id));
+  quietRun = 0; arriveTarget = 0;
+  if (!locked.length) { toast('🎉 這個場景的圖鑑已經收集完成了'); return false; }
+  const sp = locked[(Math.random() * locked.length) | 0];
+  unlock(sc.id, sp); addSpecies(sp); return true;
+}
+function arrivalTick(dt) {
+  if (S.mode !== 'auto' || !micOn) return;
+  if (state !== 'quiet') { quietRun = 0; arriveTarget = 0; return; }
+  if (!arriveTarget) arriveTarget = pickTarget();
+  quietRun += dt; if (quietRun >= arriveTarget) arrive();
+}
+function updatePanel() {
+  if (!$('#drawer').classList.contains('open')) return;
+  $('#lvl').style.width = (micOn ? clamp(level, 0, 100) : 0) + '%';
+  $('#thrMark').style.left = clamp(S.thr, 0, 100) + '%';
+  let txt;
+  if (S.mode !== 'auto') txt = '預覽模式：' + (S.mode === 'quiet' ? '安靜' : '吵雜') + '（不依麥克風）';
+  else if (!micOn) txt = '尚未啟用麥克風（目前為示範狀態，畫面會維持熱鬧）。';
+  else if (state === 'quiet') txt = `目前約 ${level.toFixed(0)} dB ｜ 狀態：安靜（吵雜累積 ${noiseAcc.toFixed(1)} / ${noiseDelay()} 秒）\n🌟 新朋友：安靜已累積 ${mmss(quietRun)}（本次目標 ${mmss(arriveTarget || 0)}）`;
+  else txt = `目前約 ${level.toFixed(0)} dB ｜ 狀態：吵雜中（安靜累積 ${quietAcc.toFixed(1)} / ${recDelay()} 秒）\n🌟 新朋友：吵雜中，安靜計時已重置`;
+  $('#micStatus').textContent = txt;
+}
+
+/* =====================================================================
+   便利貼（可預先準備：開啟／縮小成標籤／收進收納盤／放大投影）
+   ===================================================================== */
+const COLORS = ['#f3e2bd', '#f1cfcf', '#cfe1d5', '#cddbea', '#e0d3ea', '#f4d6bf', '#e2e1da'];
+const board = $('#board'), els = new Map();
+let notes = store.get('notes', []).map(n => Object.assign({ state: 'open', fs: 20, w: 280, h: 160, x: 100, y: 110, color: COLORS[0], text: '' }, n)), zTop = 10;
+const saveNotes = debounce(() => { store.set('notes', notes); updateNoteCount(); }, 250);
+const summ = n => ((n.text || '').trim().split('\n')[0] || '').slice(0, 22) || '（空白便利貼）';
+const newId = () => Date.now() + '' + Math.random().toString(36).slice(2, 6);
+let focusN = null;
+
+function makeNote(n) {
+  const el = document.createElement('div'); el.className = 'note'; el.dataset.id = n.id; els.set(n, el);
+  el.innerHTML = '<div class="nh"><span class="grip">⠿</span><span class="cols"></span><span class="ttl"></span>' +
+    '<button class="nb fsb" data-a="fs-" title="縮小字">A−</button><button class="nb fsb" data-a="fs+" title="放大字">A+</button>' +
+    '<button class="nb" data-a="mini" title="縮小成標籤／展開">－</button><button class="nb" data-a="zoom" title="放大顯示（投影用）">⤢</button>' +
+    '<button class="nb" data-a="stow" title="收進收納盤">📥</button><button class="nb" data-a="del" title="刪除">✕</button></div>' +
+    '<textarea placeholder="寫點什麼…" spellcheck="false"></textarea>';
+  const cols = $('.cols', el);
+  COLORS.forEach(c => { const b = document.createElement('button'); b.style.background = c; b.title = '換顏色';
+    b.addEventListener('click', () => { n.color = c; el.style.backgroundColor = c; saveNotes(); updateTray(); }); cols.appendChild(b); });
+  const ta = $('textarea', el); ta.value = n.text || ''; ta.style.fontSize = (n.fs || 20) + 'px'; $('.ttl', el).textContent = summ(n);
+  if (n.rot == null) n.rot = +((Math.random() - .5) * 2.4).toFixed(2);
+  el.style.setProperty('--rot', n.rot + 'deg');
+  Object.assign(el.style, { left: n.x + 'px', top: n.y + 'px', width: n.w + 'px', height: n.h + 'px', backgroundColor: n.color, zIndex: n.z || 10 });
+  ta.addEventListener('input', () => {
+    n.text = ta.value; $('.ttl', el).textContent = summ(n);
+    const t = $('#trList textarea[data-id="' + n.id + '"]'); if (t && t.value !== n.text) t.value = n.text; saveNotes();
+  });
+  el.addEventListener('pointerdown', () => { if (el.classList.contains('focus')) return; n.z = ++zTop; el.style.zIndex = n.z; saveNotes(); });
+  el.addEventListener('click', e => {
+    const a = e.target.dataset && e.target.dataset.a; if (!a) return;
+    if (a === 'del') removeNote(n);
+    else if (a === 'fs+' || a === 'fs-') { n.fs = clamp((n.fs || 20) + (a === 'fs+' ? 3 : -3), 11, 64); ta.style.fontSize = (el.classList.contains('focus') ? clamp(n.fs * 2.4, 30, 96) : n.fs) + 'px'; saveNotes(); }
+    else if (a === 'mini') { n.state = n.state === 'mini' ? 'open' : 'mini'; applyState(n, true); }
+    else if (a === 'stow') { n.state = 'hidden'; applyState(n, true); }
+    else if (a === 'zoom') toggleFocus(n);
+  });
+  $('.ttl', el).addEventListener('dblclick', () => { n.state = 'open'; applyState(n, true); });
+  dragify($('.nh', el), el, pos => { n.x = pos.x; n.y = pos.y; saveNotes(); });
+  new ResizeObserver(() => { if (n.state === 'open' && !el.classList.contains('focus') && el.offsetWidth) { n.w = el.offsetWidth; n.h = el.offsetHeight; saveNotes(); } }).observe(el);
+  board.appendChild(el); applyState(n, false);
+  return el;
+}
+function applyState(n, animate) {
+  const el = els.get(n); if (!el) return;
+  if (n.state !== 'open' && focusN === n) leaveFocus();
+  el.classList.toggle('mini', n.state === 'mini');
+  $('[data-a="mini"]', el).textContent = n.state === 'mini' ? '＋' : '－';
+  if (n.state === 'hidden') {
+    if (animate) { el.classList.add('bloomOut'); setTimeout(() => { if (n.state === 'hidden') el.style.display = 'none'; el.classList.remove('bloomOut'); }, 420); }
+    else el.style.display = 'none';
+  } else {
+    n.x = clamp(n.x, 0, Math.max(0, innerWidth - 220)); n.y = clamp(n.y, 60, Math.max(60, innerHeight - 70));
+    el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+    el.style.display = ''; el.classList.remove('bloomOut');
+    if (n.state === 'open') { el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } else { el.style.width = ''; el.style.height = ''; }
+    if (animate) bloomIn(el, 50, 50);
+  }
+  updateTray(); updateNoteCount(); saveNotes();
+}
+function toggleFocus(n) {
+  if (focusN === n) { leaveFocus(); return; }
+  leaveFocus();
+  if (n.state !== 'open') { n.state = 'open'; applyState(n, false); }
+  const el = els.get(n); focusN = n; el.classList.add('focus'); $('#dim').classList.add('on');
+  $('textarea', el).style.fontSize = clamp((n.fs || 20) * 2.4, 30, 96) + 'px'; el.style.zIndex = 6500; bloomIn(el, 50, 50);
+}
+function leaveFocus() {
+  if (!focusN) return; const el = els.get(focusN);
+  if (el) { el.classList.remove('focus'); $('textarea', el).style.fontSize = (focusN.fs || 20) + 'px'; el.style.zIndex = focusN.z || 10; }
+  $('#dim').classList.remove('on'); focusN = null;
+}
+function removeNote(n) {
+  if (focusN === n) leaveFocus();
+  notes = notes.filter(x => x !== n); const el = els.get(n); if (el) el.remove(); els.delete(n);
+  updateTray(); updateNoteCount(); saveNotes();
+}
+function dragify(handle, el, onEnd) {
+  handle.addEventListener('pointerdown', e => {
+    if (e.target.closest('button') || el.classList.contains('focus')) return;
+    e.preventDefault(); handle.setPointerCapture(e.pointerId);
+    const ox = e.clientX - el.offsetLeft, oy = e.clientY - el.offsetTop;
+    const move = ev => { el.style.left = clamp(ev.clientX - ox, -el.offsetWidth + 60, innerWidth - 60) + 'px'; el.style.top = clamp(ev.clientY - oy, 0, innerHeight - 40) + 'px'; };
+    const up = () => { handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up);
+      onEnd && onEnd({ x: el.offsetLeft, y: el.offsetTop }); };
+    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+  });
+}
+function addNote(state, text) {
+  const off = (notes.length % 6) * 28;
+  const n = { id: newId(), x: Math.min(innerWidth - 300, 90 + off), y: 100 + off, w: 280, h: 160, color: COLORS[S.noteColor] || COLORS[0],
+    text: text || '', fs: 20, z: ++zTop, state: state || 'open' };
+  notes.push(n); const el = makeNote(n); if (n.state === 'open') { bloomIn(el, 50, 50); $('textarea', el).focus(); } saveNotes();
+  return n;
+}
+function updateNoteCount() { const e = $('#noteCount'); if (e) e.textContent = notes.filter(n => n.state !== 'hidden').length + '/' + notes.length; }
+
+/* ---- 收納盤：先把內容打好，需要時再「化開」到白板上 ---- */
+function updateTray() {
+  const list = $('#trList'); if (!list) return; list.innerHTML = '';
+  if (!notes.length) list.innerHTML = '<div style="color:var(--ink2);font-size:13px;padding:8px">還沒有便利貼。按「＋ 新增一張」開始預先準備吧！</div>';
+  notes.forEach(n => {
+    const row = document.createElement('div'); row.className = 'trow2';
+    row.innerHTML = '<button class="sw" title="換顏色"></button><textarea rows="2" placeholder="預先輸入便利貼內容…"></textarea>' +
+      '<div class="rb"><button data-s="open" title="顯示在白板上">👁</button><button data-s="mini" title="縮小成標籤">－</button><button data-s="hidden" title="收起">📥</button><button data-s="del" title="刪除">✕</button></div>';
+    const sw = $('.sw', row), ta = $('textarea', row); sw.style.background = n.color; ta.dataset.id = n.id; ta.value = n.text || '';
+    sw.onclick = () => { n.color = COLORS[(COLORS.indexOf(n.color) + 1) % COLORS.length]; sw.style.background = n.color; const el = els.get(n); if (el) el.style.backgroundColor = n.color; saveNotes(); };
+    ta.oninput = () => { n.text = ta.value; const el = els.get(n); if (el) { $('textarea', el).value = n.text; $('.ttl', el).textContent = summ(n); } saveNotes(); };
+    row.querySelectorAll('.rb button').forEach(b => {
+      if (b.dataset.s === n.state) b.classList.add('on');
+      b.onclick = () => { if (b.dataset.s === 'del') { removeNote(n); return; } n.state = b.dataset.s; applyState(n, true); };
+    });
+    list.appendChild(row);
+  });
+}
+function arrange() {
+  const vis = notes.filter(n => n.state !== 'hidden'), minis = vis.filter(n => n.state === 'mini'), opens = vis.filter(n => n.state === 'open');
+  let x = 12, y = innerHeight - 46;
+  minis.forEach(n => { const el = els.get(n), w = el.offsetWidth || 200; if (x + w > innerWidth - 12) { x = 12; y -= 40; }
+    n.x = x; n.y = y; el.style.left = x + 'px'; el.style.top = y + 'px'; x += w + 10; });
+  let ox = 16, oy = 84, rowH = 0;
+  opens.forEach(n => { const el = els.get(n); if (ox + n.w > innerWidth - 16) { ox = 16; oy += rowH + 16; rowH = 0; }
+    n.x = ox; n.y = oy; el.style.left = ox + 'px'; el.style.top = oy + 'px'; ox += n.w + 16; rowH = Math.max(rowH, n.h); });
+  saveNotes();
+}
+const setAll = st => { notes.forEach(n => { if (st === 'mini' && n.state === 'hidden') return; n.state = st; applyState(n, true); }); requestAnimationFrame(() => requestAnimationFrame(arrange)); };
+$('#trShowAll').onclick = () => setAll('open'); $('#trMiniAll').onclick = () => setAll('mini'); $('#trHideAll').onclick = () => setAll('hidden');
+$('#trArr').onclick = arrange;
+$('#trAdd').onclick = () => { const n = addNote('hidden'); updateTray(); const t = $('#trList textarea[data-id="' + n.id + '"]'); if (t) { t.focus(); t.scrollIntoView({ block: 'nearest' }); } };
+$('#trExport').onclick = () => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(notes, null, 1)], { type: 'application/json' }));
+  a.download = 'quiet-board-notes.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('#trImport').onclick = () => $('#trFile').click();
+$('#trFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const arr = JSON.parse(await f.text()); if (!Array.isArray(arr)) throw new Error('bad'); let k = 0;
+    arr.forEach(o => { if (!o || typeof o !== 'object') return; const n = Object.assign({ state: 'hidden', fs: 20, w: 280, h: 160, x: 120, y: 120, color: COLORS[0], text: '' }, o, { id: newId(), z: ++zTop }); notes.push(n); makeNote(n); k++; });
+    saveNotes(); alert('已匯入 ' + k + ' 張便利貼（預設放在收納盤裡）'); }
+  catch (err) { alert('匯入失敗：檔案格式不正確'); }
+  e.target.value = '';
+};
+const trayEl = $('#tray'), tpos = store.get('trayPos', { x: Math.max(16, innerWidth - 410), y: 84 });
+trayEl.style.left = clamp(tpos.x, 0, innerWidth - 60) + 'px'; trayEl.style.top = clamp(tpos.y, 0, innerHeight - 60) + 'px';
+dragify($('#trayHead'), trayEl, pos => store.set('trayPos', pos));
+const setTray = on => { trayEl.classList.toggle('show', on); store.set('trayShow', on); if (on) { updateTray(); bloomIn(trayEl, 20, 0); } };
+$('#btnTray').onclick = () => setTray(!trayEl.classList.contains('show')); $('#trayClose').onclick = () => setTray(false);
+if (store.get('trayShow', false)) trayEl.classList.add('show');
+{ const dim = document.createElement('div'); dim.id = 'dim'; board.appendChild(dim); dim.onclick = leaveFocus; }
+addEventListener('keydown', e => { if (e.key === 'Escape') leaveFocus(); });
+
+notes.forEach(makeNote); notes.forEach(n => { zTop = Math.max(zTop, n.z || 10); }); updateTray(); updateNoteCount();
+
+const nc = $('#newColors');
+COLORS.forEach((c, i) => { const b = document.createElement('button'); b.className = 'swatch' + (i === S.noteColor ? ' sel' : ''); b.style.background = c; b.title = '新便利貼顏色';
+  b.addEventListener('click', () => { S.noteColor = i; saveSettings(); [...nc.children].forEach((x, j) => x.classList.toggle('sel', j === i)); }); nc.appendChild(b); });
+$('#addNote').addEventListener('click', () => addNote('open'));
+$('#clearNotes').addEventListener('click', () => { if (confirm('確定要清除全部便利貼嗎？')) { leaveFocus(); notes = []; store.set('notes', []); els.forEach(el => el.remove()); els.clear(); updateTray(); updateNoteCount(); } });
+
+/* =====================================================================
+   計時器
+   ===================================================================== */
+const T = { total: store.get('timerTotal', 300), remain: store.get('timerTotal', 300), state: 'idle', end: 0, sound: true };
+const tEl = $('#timer'), tDisp = $('#tDisp');
+const fmt = s => { s = Math.max(0, Math.ceil(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+function syncInputs() { $('#tMin').value = Math.floor(T.total / 60); $('#tSec').value = T.total % 60; }
+function setTotal(sec) { T.total = clamp(Math.round(sec), 1, 10800); T.remain = T.total; T.state = 'idle'; tEl.classList.remove('done');
+  $('#tStart').textContent = '開始'; store.set('timerTotal', T.total); syncInputs(); }
+[1, 3, 5, 10, 15, 20, 30].forEach(m => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = m + ' 分'; b.onclick = () => setTotal(m * 60); $('#tChips').appendChild(b); });
+const onTimeInput = () => setTotal((+$('#tMin').value || 0) * 60 + clamp(+$('#tSec').value || 0, 0, 59));
+$('#tMin').addEventListener('change', onTimeInput); $('#tSec').addEventListener('change', onTimeInput);
+function adjust(delta) {
+  if (T.state === 'running') { T.end += delta * 1000; T.total = Math.max(T.total + delta, 1); }
+  else if (T.state === 'paused') { T.remain = Math.max(1, T.remain + delta); T.total = Math.max(T.total + delta, T.remain); }
+  else setTotal(T.total + delta);
+}
+$('#tP1').onclick = () => adjust(60); $('#tM1').onclick = () => adjust(-60);
+$('#tStart').addEventListener('click', () => {
+  getAC().resume && getAC().resume();
+  if (T.state === 'running') { T.remain = (T.end - performance.now()) / 1000; T.state = 'paused'; $('#tStart').textContent = '繼續'; }
+  else { if (T.state === 'done' || T.remain <= 0) { T.remain = T.total; tEl.classList.remove('done'); }
+    T.end = performance.now() + T.remain * 1000; T.state = 'running'; $('#tStart').textContent = '暫停'; }
+});
+$('#tReset').addEventListener('click', () => { T.remain = T.total; T.state = 'idle'; tEl.classList.remove('done'); $('#tStart').textContent = '開始'; });
+$('#tSound').addEventListener('change', e => { T.sound = e.target.checked; });
+function chime() {
+  if (!T.sound) return;
+  try { const ac = getAC(); [0, .6, 1.2].forEach((d, i) => { const o = ac.createOscillator(), gn = ac.createGain(), t0 = ac.currentTime + d;
+    o.type = 'sine'; o.frequency.value = [659, 784, 988][i]; gn.gain.setValueAtTime(0, t0); gn.gain.linearRampToValueAtTime(.18, t0 + .04); gn.gain.exponentialRampToValueAtTime(.001, t0 + 1.1);
+    o.connect(gn).connect(ac.destination); o.start(t0); o.stop(t0 + 1.2); }); } catch (e) {}
+}
+let lastTxt = '';
+function tickTimer() {
+  if (T.state === 'running') { T.remain = (T.end - performance.now()) / 1000;
+    if (T.remain <= 0) { T.remain = 0; T.state = 'done'; tEl.classList.add('done'); $('#tStart').textContent = '再一次'; chime(); } }
+  const txt = fmt(T.remain); if (txt !== lastTxt) { tDisp.textContent = txt; lastTxt = txt; document.title = T.state === 'running' ? txt + '｜安靜小白板' : '安靜小白板 Quiet Board'; }
+  $('#tBar').style.width = (T.total ? clamp(T.remain / T.total, 0, 1) * 100 : 0) + '%';
+}
+const tp = store.get('timerPos', { x: Math.max(20, innerWidth - 290), y: 90 });
+tEl.style.left = clamp(tp.x, 0, innerWidth - 60) + 'px'; tEl.style.top = clamp(tp.y, 0, innerHeight - 60) + 'px';
+dragify($('#timerHead'), tEl, pos => store.set('timerPos', pos));
+$('#tClose').onclick = () => { tEl.classList.remove('show'); store.set('timerShow', false); };
+$('#btnTimer').onclick = () => { const on = tEl.classList.toggle('show'); store.set('timerShow', on); if (on) bloomIn(tEl, 60, 0); };
+if (store.get('timerShow', false)) tEl.classList.add('show');
+syncInputs();
+
+/* =====================================================================
+   設定面板與工具列
+   ===================================================================== */
+const drawer = $('#drawer');
+function refreshSceneSelect() {
+  const sel = $('#selScene'); if (!sel) return; sel.innerHTML = '';
+  Object.values(SCENES).forEach(sc => { const o = document.createElement('option'); o.value = sc.id; o.textContent = sc.name; sel.appendChild(o); });
+  sel.value = SCENES[S.scene] ? S.scene : Object.keys(SCENES)[0];
+  const as = $('#aScene'); if (as) { as.innerHTML = ''; Object.values(SCENES).forEach(sc => { const o = document.createElement('option'); o.value = sc.id; o.textContent = sc.name; as.appendChild(o); }); }
+}
+function recalcDiversityMax() {
+  const mx = Math.max(...Object.values(SCENES).map(s => s.species.length));
+  $('#rDiv').max = mx;
+}
+function bindRange(id, key, out, fmtFn, rebuild) {
+  const el = $('#' + id), o = $('#' + out); el.value = S[key]; o.textContent = fmtFn(S[key]);
+  el.addEventListener('input', () => { S[key] = +el.value; o.textContent = fmtFn(S[key]); saveSettings(); if (rebuild) build(); });
+}
+bindRange('rThr', 'thr', 'oThr', v => v + ' dB');
+bindRange('rCal', 'calib', 'oCal', v => (v > 0 ? '+' : '') + v);
+bindRange('rSpd', 'speed', 'oSpd', v => '×' + (+v).toFixed(1));
+bindRange('rDiv', 'diversity', 'oDiv', v => v + ' 種', true);
+bindRange('rDen', 'density', 'oDen', v => '×' + (+v).toFixed(1), true);
+recalcDiversityMax(); $('#rDiv').value = S.diversity;
+$('#nNoise').value = S.noiseVal; $('#uNoise').value = S.noiseUnit; $('#nRec').value = S.recVal; $('#uRec').value = S.recUnit;
+$('#nNoise').oninput = e => { S.noiseVal = Math.max(1, +e.target.value || 1); saveSettings(); };
+$('#uNoise').onchange = e => { S.noiseUnit = +e.target.value; saveSettings(); };
+$('#nRec').oninput = e => { S.recVal = Math.max(1, +e.target.value || 1); saveSettings(); };
+$('#uRec').onchange = e => { S.recUnit = +e.target.value; saveSettings(); };
+$('#selMode').value = S.mode; $('#selMode').onchange = e => { S.mode = e.target.value; saveSettings(); };
+refreshSceneSelect();
+$('#selScene').onchange = e => chooseScene(e.target.value);
+$('#calib').onclick = () => { if (!micOn) { alert('請先啟用麥克風，並保持目前的安靜狀態幾秒後再按。'); return; }
+  S.thr = clamp(Math.round(level + 8), 20, 90); $('#rThr').value = S.thr; $('#oThr').textContent = S.thr + ' dB'; saveSettings(); };
+$('#micStart').onclick = startMic; $('#btnMic').onclick = () => { drawer.classList.add('open'); if (!micOn) startMic(); };
+$('#btnSettings').onclick = () => drawer.classList.toggle('open');
+$('#closeDrawer').onclick = () => drawer.classList.remove('open');
+$('#btnFull').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); };
+const toggleUi = () => { document.body.classList.toggle('ui-hidden'); drawer.classList.remove('open'); };
+$('#btnHide').onclick = toggleUi; $('#showUi').onclick = toggleUi;
+addEventListener('keydown', e => { if ((e.key === 'h' || e.key === 'H') && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) toggleUi(); });
+
+/* =====================================================================
+   圖鑑：物種真正出現在畫面上（顯色、完整可見）連續累積 2 秒才解鎖
+   ===================================================================== */
+let album = store.get('album', {}), viewScene = S.scene;
+const seenAcc = {}, thumbCache = {};
+const isFound = (sc, id) => !!(album[sc] && album[sc][id]);
+function unlock(sc, sp) {
+  (album[sc] = album[sc] || {})[sp.id] = Date.now(); store.set('album', album);
+  updateAlbumCount(); renderAlbum(); if (S.albumToast) toast('🌟 新朋友來了：' + sp.name + '！');
+}
+let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 3200); }
+function updateAlbumCount() {
+  const sc = SCENES[S.scene]; if (!sc) return;
+  $('#albumCount').textContent = sc.species.filter(sp => isFound(sc.id, sp.id)).length + '/' + sc.species.length;
+}
+/* 把物種畫成縮圖（自動量出邊界、置中縮放）；未解鎖則轉成灰色剪影 */
+function thumbOf(sp) {
+  if (thumbCache[sp.id]) return thumbCache[sp.id];
+  const K = 1.6, cw = 520, ch = 380, cvs = document.createElement('canvas'); cvs.width = cw; cvs.height = ch;
+  const x = cvs.getContext('2d'); x.translate(cw / 2, ch / 2); x.scale(K, K);
+  try { sp.draw(x, { a: 1, lw: 1.3 / K, ink: '#46393a', c: punch }, { clock: 1.3, ph: 0, seed: 12345, pal: sp.pal[0], dir: 1, size: 1, sp }, rng(12345)); } catch (e) {}
+  const d = x.getImageData(0, 0, cw, ch).data; let x0 = cw, y0 = ch, x1 = 0, y1 = 0;
+  for (let j = 0; j < ch; j++) for (let i = 0; i < cw; i++) if (d[(j * cw + i) * 4 + 3] > 8) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
+  if (x1 < x0) { x0 = 0; y0 = 0; x1 = cw - 1; y1 = ch - 1; }
+  const sil = document.createElement('canvas'); sil.width = cw; sil.height = ch; const sx = sil.getContext('2d');
+  sx.drawImage(cvs, 0, 0); sx.globalCompositeOperation = 'source-atop'; sx.fillStyle = '#cfc9bf'; sx.fillRect(0, 0, cw, ch);
+  const cp = document.createElement('canvas'); cp.width = cw; cp.height = ch; cp.getContext('2d').drawImage(sil, 0, 0);
+  sx.globalCompositeOperation = 'source-over'; sx.drawImage(cp, 0, 0); sx.drawImage(cp, 0, 0);
+  return thumbCache[sp.id] = { cvs, sil, box: [x0, y0, x1 - x0 + 1, y1 - y0 + 1] };
+}
+function paintCard(el, sp, ok) {
+  const t = thumbOf(sp), g2 = el.getContext('2d'), [bx, by, bw, bh] = t.box, W2 = el.width, H2 = el.height;
+  const k = Math.min((W2 - 14) / bw, (H2 - 14) / bh, 1.5);
+  g2.clearRect(0, 0, W2, H2);
+  if (bw > 0 && bh > 0 && W2 > 0 && H2 > 0) g2.drawImage(ok ? t.cvs : t.sil, bx, by, bw, bh, (W2 - bw * k) / 2, (H2 - bh * k) / 2, bw * k, bh * k);
+  if (!ok) { g2.font = 'bold 44px sans-serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillStyle = 'rgba(255,255,255,.9)'; g2.fillText('？', W2 / 2, H2 / 2 + 2); }
+}
+function renderAlbum() {
+  const sc = SCENES[viewScene] || SCENES[S.scene]; if (!sc) return;
+  $('#aScene').value = sc.id;
+  const found = sc.species.filter(sp => isFound(sc.id, sp.id)).length;
+  $('#aProg').innerHTML = '<span>已發現 ' + found + ' / ' + sc.species.length + '</span><span>' + (found === sc.species.length ? '🎉 全部收集完成' : '安靜一點，牠們就會出現') + '</span>';
+  $('#aBar').style.width = (found / sc.species.length * 100) + '%';
+  const grid = $('#aGrid'); grid.innerHTML = '';
+  sc.species.forEach(sp => {
+    const ok = isFound(sc.id, sp.id), card = document.createElement('div'); card.className = 'acard' + (ok ? '' : ' locked');
+    const cv2 = document.createElement('canvas'); cv2.width = 168; cv2.height = 132; paintCard(cv2, sp, ok);
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = ok ? sp.name : '？？？';
+    card.append(cv2, nm);
+    if (ok) { const dt = document.createElement('div'); dt.className = 'dt'; const D = new Date(album[sc.id][sp.id]); dt.textContent = (D.getMonth() + 1) + '/' + D.getDate() + ' 初次見面'; card.append(dt); }
+    grid.appendChild(card);
+  });
+  const lim = sc.id === S.scene && found > S.diversity, lo = Math.min(S.arriveMin, S.arriveMax), hi = Math.max(S.arriveMin, S.arriveMax);
+  $('#aHint').textContent = lim ? '提示：目前「同時出現的種類上限」較低，較早收集到的物種暫時不會出現。' : (found < sc.species.length ? '保持安靜約 ' + lo + '–' + hi + ' 分鐘，就會有一位新朋友隨機來拜訪。' : '');
+}
+function setAlbumShow(on) { aPanel.classList.toggle('show', on); store.set('albumShow', on); if (on) { renderAlbum(); bloomIn(aPanel, 20, 0); } }
+const aPanel = $('#album');
+const ap = store.get('albumPos', { x: 20, y: Math.max(90, innerHeight - 470) });
+aPanel.style.left = clamp(ap.x, 0, innerWidth - 60) + 'px'; aPanel.style.top = clamp(ap.y, 0, innerHeight - 60) + 'px';
+dragify($('#albumHead'), aPanel, pos => store.set('albumPos', pos));
+$('#aScene').onchange = e => { viewScene = e.target.value; renderAlbum(); };
+$('#aClose').onclick = () => setAlbumShow(false);
+$('#btnAlbum').onclick = () => { viewScene = S.scene; setAlbumShow(!aPanel.classList.contains('show')); };
+$('#cKeep').checked = S.albumKeep; aPanel.classList.toggle('keep', S.albumKeep);
+$('#cKeep').onchange = e => { S.albumKeep = e.target.checked; aPanel.classList.toggle('keep', S.albumKeep); saveSettings(); if (S.albumKeep) setAlbumShow(true); };
+$('#nArrMin').value = S.arriveMin; $('#nArrMax').value = S.arriveMax;
+$('#nArrMin').oninput = e => { S.arriveMin = clamp(+e.target.value || 1, 1, 60); arriveTarget = 0; saveSettings(); renderAlbum(); };
+$('#nArrMax').oninput = e => { S.arriveMax = clamp(+e.target.value || 1, 1, 60); arriveTarget = 0; saveSettings(); renderAlbum(); };
+$('#arrNow').onclick = () => { $('#drawer').classList.remove('open'); arrive(); };
+$('#cToast').checked = S.albumToast; $('#cToast').onchange = e => { S.albumToast = e.target.checked; saveSettings(); };
+$('#aReset').onclick = () => { if (confirm('確定要把圖鑑重設嗎？所有物種會變回未知。')) { album = {}; store.set('album', album); for (const k in seenAcc) delete seenAcc[k]; quietRun = 0; arriveTarget = 0; build(); updateAlbumCount(); renderAlbum(); } };
+if (store.get('albumShow', false) || S.albumKeep) aPanel.classList.add('show');
+renderAlbum(); updateAlbumCount();
+
+/* =====================================================================
+   關卡選擇畫面
+   ===================================================================== */
+const prevCache = {};
+function scenePreview(sc) {
+  if (prevCache[sc.id]) return prevCache[sc.id];
+  const w = 320, h = 200, D = 2, cv2 = document.createElement('canvas'); cv2.width = w * D; cv2.height = h * D;
+  const x = cv2.getContext('2d'); x.scale(D, D);
+  const gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, sc.sky[0]); gr.addColorStop(1, sc.sky[1]); x.fillStyle = gr; x.fillRect(0, 0, w, h);
+  const s = .42, ink = '#46393a', id = c => c;
+  try { sc.decor && sc.decor(x, { w, h, s, t: 1, W: { a: 1, lw: 1.3, ink, c: punch }, ve: 1 }); } catch (e) {}
+  sc.species.slice(0, 5).forEach((sp, i) => {
+    const k = s * 1.15 * (sp.size[0] + sp.size[1]) / 2, px = w * (.16 + .68 * ((i * .37 + .1) % 1)), py = h * clamp((sp.band[0] + sp.band[1]) / 2, .16, .88);
+    x.save(); x.translate(px, py); x.scale(k, k);
+    try { sp.draw(x, { a: 1, lw: 1.3 / k, ink, c: punch }, { clock: 1.7 + i, ph: i, seed: 100 + i, pal: sp.pal[0], dir: 1, size: 1, sp }, rng(100 + i)); } catch (e) {}
+    x.restore();
+  });
+  return prevCache[sc.id] = cv2;
+}
+function chooseScene(id) {
+  if (!SCENES[id]) return;
+  S.scene = id; saveSettings(); quietRun = 0; arriveTarget = 0; build(); viewScene = id; renderAlbum(); updateAlbumCount();
+  $('#selScene').value = id; $('#curSceneName').textContent = SCENES[id].name;
+}
+function openLevels() {
+  const grid = $('#lvGrid'); grid.innerHTML = ''; let tf = 0, tt = 0;
+  Object.values(SCENES).forEach((sc, i) => {
+    const total = sc.species.length, found = sc.species.filter(sp => isFound(sc.id, sp.id)).length; tf += found; tt += total;
+    const stars = found === 0 ? 0 : found === total ? 3 : found >= total / 2 ? 2 : 1;
+    const card = document.createElement('div'); card.className = 'lv' + (sc.id === S.scene ? ' cur' : ''); card.style.animationDelay = (i * 60) + 'ms';
+    const cv2 = document.createElement('canvas'); cv2.width = 640; cv2.height = 400; cv2.getContext('2d').drawImage(scenePreview(sc), 0, 0);
+    card.innerHTML = '<div class="no">場景 ' + (i + 1) + '</div>' + (sc.id === S.scene ? '<div class="badge">目前場景</div>' : '');
+    card.appendChild(cv2);
+    card.insertAdjacentHTML('beforeend', '<div class="nm"></div><div class="meta"><span class="stars">' +
+      [1, 2, 3].map(n => n <= stars ? '★' : '<span class="off">★</span>').join('') + '</span><span>📖 ' + found + ' / ' + total + '</span></div>' +
+      '<div class="pbar"><i style="width:' + (found / total * 100) + '%"></i></div>');
+    $('.nm', card).textContent = sc.name;
+    card.onclick = e => inkTransition(e.clientX, e.clientY, () => { chooseScene(sc.id); closeLevels(); }, shade(sc.sky[1], '#9db3a7', .4));
+    grid.appendChild(card);
+  });
+  $('#lvTotal').textContent = '⭐ 圖鑑總收集 ' + tf + ' / ' + tt;
+  $('#levels').classList.add('show'); $('#levels').scrollTop = 0;
+}
+function closeLevels() { $('#levels').classList.remove('show'); }
+$('#btnLevels').onclick = $('#btnLevels2').onclick = e => { $('#drawer').classList.remove('open'); inkTransition(e.clientX, e.clientY, openLevels, '#cddad1'); };
+$('#lvClose').onclick = e => inkTransition(e.clientX, e.clientY, closeLevels, '#cddad1');
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('#levels').classList.contains('show')) inkTransition(CW / 2, CH / 2, closeLevels, '#cddad1'); });
+$('#curSceneName').textContent = (SCENES[S.scene] || {}).name || '';
+
+/* =====================================================================
+   水滴化開／墨汁暈染 轉場
+   ===================================================================== */
+const fx = $('#fx'), fg = fx.getContext('2d'), ripples = []; let fxJob = null;
+function bloomIn(el, bx, by) {
+  el.style.setProperty('--bx', (bx == null ? 30 : bx) + '%'); el.style.setProperty('--by', (by == null ? 0 : by) + '%');
+  el.classList.remove('bloom'); void el.offsetWidth; el.classList.add('bloom');
+  el.addEventListener('animationend', function f() { el.classList.remove('bloom'); el.removeEventListener('animationend', f); });
+}
+function inkPts(cx, cy, r, t, seed) {
+  const n = 84, p = [];
+  for (let i = 0; i < n; i++) { const a = i / n * 6.2832;
+    const k = 1 + .09 * Math.sin(3 * a + seed + t * 1.7) + .06 * Math.sin(5 * a + seed * 2 - t * 2.3) + .04 * Math.sin(9 * a + seed * 3 + t * 3.1) + .022 * Math.sin(17 * a + seed * 5 + t * 4.3);
+    p.push([cx + Math.cos(a) * r * k, cy + Math.sin(a) * r * k]); }
+  return p;
+}
+function inkPath(pts) { fg.beginPath(); pts.forEach((q, i) => i ? fg.lineTo(q[0], q[1]) : fg.moveTo(q[0], q[1])); fg.closePath(); }
+function inkColors(base) { return { color: base, dark: shade(base, '#6f6860', .38), light: shade(base, '#ffffff', .5), edge: shade(base, '#ffffff', .15) }; }
+function inkFill(J, r, t) {
+  if (r < 1) return;
+  fg.save();
+  inkPath(inkPts(J.ox, J.oy, r * 1.05, t * .8, J.seed + 1)); fg.fillStyle = J.c.light; fg.globalAlpha = .4; fg.fill();     // 暈出去的淡邊
+  inkPath(inkPts(J.ox, J.oy, r, t, J.seed));
+  const gr = fg.createRadialGradient(J.ox, J.oy, 0, J.ox, J.oy, r); gr.addColorStop(0, J.c.dark); gr.addColorStop(.55, J.c.color); gr.addColorStop(1, J.c.edge);
+  fg.fillStyle = gr; fg.globalAlpha = .98; fg.fill();
+  fg.lineWidth = 5; fg.strokeStyle = J.c.dark; fg.globalAlpha = .3; fg.stroke();                                              // 邊緣積色
+  fg.restore();
+}
+function inkReveal2(J, r, t) {
+  fg.save(); fg.fillStyle = J.c.color; fg.globalAlpha = .98; fg.fillRect(0, 0, CW, CH);
+  fg.globalCompositeOperation = 'destination-out'; fg.fillStyle = '#000';
+  for (const [k, a] of [[1.07, .35], [1.0, .5], [.94, 1]]) { inkPath(inkPts(J.ox, J.oy, r * k, t, J.seed)); fg.globalAlpha = a; fg.fill(); }
+  fg.globalCompositeOperation = 'source-over'; inkPath(inkPts(J.ox, J.oy, r * .985, t, J.seed)); fg.lineWidth = 5; fg.strokeStyle = J.c.dark; fg.globalAlpha = .28; fg.stroke();
+  fg.restore();
+}
+function drawRipple(rp) {
+  const p = rp.t / 1.9, e = 1 - Math.pow(1 - p, 2.4); fg.save(); fg.strokeStyle = rp.c.dark; fg.lineWidth = 2;
+  for (let k = 0; k < 3; k++) { const pk = clamp(p * 1.25 - k * .16, 0, 1); if (pk <= 0) continue;
+    fg.globalAlpha = (1 - pk) * .55; fg.beginPath(); fg.arc(rp.x, rp.y, pk * (50 + k * 22), 0, 6.283); fg.stroke(); }
+  inkPath(inkPts(rp.x, rp.y, e * 36, rp.t * 1.3, rp.seed)); fg.fillStyle = rp.c.color; fg.globalAlpha = (1 - p) * .45; fg.fill(); fg.restore();
+}
+function fxTick(dt) {
+  if (!fxJob && !ripples.length) return;
+  fg.setTransform(DPR, 0, 0, DPR, 0, 0); fg.clearRect(0, 0, CW, CH);
+  const J = fxJob;
+  if (J) {
+    J.t += dt;
+    if (J.phase === 'cover') { const p = clamp(J.t / .9, 0, 1), e = p * p * (3 - 2 * p); inkFill(J, e * J.maxR, J.t);
+      if (p >= 1) { J.phase = 'hold'; J.t = 0; try { J.mid && J.mid(); } catch (err) { console.error(err); } } }
+    else if (J.phase === 'hold') { fg.fillStyle = J.c.color; fg.globalAlpha = .98; fg.fillRect(0, 0, CW, CH); fg.globalAlpha = 1; if (J.t > .18) { J.phase = 'reveal'; J.t = 0; } }
+    else { const p = clamp(J.t / .95, 0, 1), e = p * p * (3 - 2 * p); inkReveal2(J, e * J.maxR * 1.03, J.t);
+      if (p >= 1) { fxJob = null; fx.style.pointerEvents = 'none'; fg.clearRect(0, 0, CW, CH); } }
+  }
+  for (let i = ripples.length - 1; i >= 0; i--) { const rp = ripples[i]; rp.t += dt; if (rp.t > 1.9) { ripples.splice(i, 1); continue; } drawRipple(rp); }
+}
+function inkJob(ox, oy, mid, base, phase) {
+  const maxR = Math.hypot(Math.max(ox, CW - ox), Math.max(oy, CH - oy)) * 1.22;
+  fxJob = { ox, oy, mid, phase, t: 0, maxR, seed: Math.random() * 6, c: inkColors(base || '#cddad1') }; fx.style.pointerEvents = 'auto';
+}
+function inkTransition(ox, oy, mid, base) { if (fxJob) { mid && mid(); return; } inkJob(ox, oy, mid, base, 'cover'); }
+function inkReveal(ox, oy, base) { if (!fxJob) inkJob(ox, oy, null, base, 'hold'); }
+function fxRipple(x, y, base) { ripples.push({ x, y, t: 0, seed: Math.random() * 6, c: inkColors(shade(base || '#cddad1', '#9db3a7', .3)) }); }
+
+/* =====================================================================
+   主迴圈
+   ===================================================================== */
+let last = performance.now(), dotTick = 0;
+function frame(now) {
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  logic(dt); arrivalTick(dt); render(dt, state); fxTick(dt); tickTimer(); updatePanel();
+  if ((dotTick += dt) > .3) { dotTick = 0; $('#micDot').className = 'dot ' + (!micOn ? '' : state === 'quiet' ? 'on' : 'noisy'); }
+  requestAnimationFrame(frame);
+}
+build(); inkReveal(CW * .5, CH * .45, '#d3dfd5'); requestAnimationFrame(frame);
+
+/* 對外 API：讓你在自己的 <script> 或 custom-scenes.js 裡新增場景 */
+window.QuietBoard = { registerScene, Lib, draw: { poly, drawTree, drawCloud, landPts, rr, punch, rng, blob, shape, line, wash, dot, mix, at }, rebuild: build, settings: S, _dev: { SCENES, thumbOf, thumbCache } };
+
+/* 若有 custom-scenes.js 就自動載入（沒有也沒關係） */
+(function () { const sc = document.createElement('script'); sc.src = 'custom-scenes.js'; sc.onload = () => { refreshSceneSelect(); build(); renderAlbum(); }; sc.onerror = () => {}; document.head.appendChild(sc); })();
+})();
+</script>
+</body>
+</html>
