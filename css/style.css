@@ -61,17 +61,19 @@ input[type=text],input[type=number],select,textarea{background:var(--surface);bo
 .ov-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 @media (max-width:900px){.ov-layout{grid-template-columns:minmax(0,1fr)}}
 .scroll-x{overflow-x:auto}
-table.ov{border-collapse:separate;border-spacing:3px;width:100%;min-width:560px;table-layout:fixed}
-table.ov th{font-weight:500;font-size:13px;color:var(--muted);padding:4px 2px}
-table.ov th.p{width:72px;text-align:right;padding-right:6px;line-height:1.25}
-table.ov th.p small{display:block;font-size:11px;font-variant-numeric:tabular-nums}
-.slot{border-radius:8px;padding:5px 7px;min-height:78px;font-size:12.5px;line-height:1.35;display:flex;flex-direction:column;gap:1px}
+table.ov{border-collapse:separate;border-spacing:2px;width:100%;table-layout:fixed}
+table.ov th{font-weight:500;font-size:13px;color:var(--muted);padding:2px}
+table.ov th.p{width:62px;text-align:right;padding-right:5px;line-height:1.15}
+table.ov th.p small{display:block;font-size:10.5px;font-variant-numeric:tabular-nums}
+.slot{border-radius:6px;padding:2px 5px;min-height:50px;font-size:11.5px;line-height:1.25;display:flex;flex-direction:column;justify-content:center;gap:0}
 .slot .who{display:flex;gap:5px;min-width:0}
-.slot .who b{flex:none;width:16px;font-weight:700;opacity:.8}
+.slot .who b{flex:none;width:14px;font-weight:700;opacity:.8}
 .slot .who span{min-width:0;overflow-wrap:anywhere}
 .slot .note{margin-top:auto;font-weight:700;font-size:12px;padding-top:3px}
 .s-both{background:var(--ok-bg);color:var(--ok-fg)}
-.star{font-style:normal;color:var(--star);font-size:17px;line-height:1.2}
+.star{font-style:normal;color:#4a4a4a;font-size:17px;line-height:1.1}
+.star.big{color:var(--star);font-size:34px;line-height:1;align-self:center}
+.slot .rm{font-style:normal;opacity:.75}
 .slot .who span{display:flex;align-items:center}
 .s-go{background:var(--info-bg);color:var(--info-fg)}
 .s-wait{background:var(--warn-bg);color:var(--warn-fg)}
@@ -138,10 +140,13 @@ details.set summary{cursor:pointer;font-weight:500}
 .sv-prev{max-width:560px}
 .info{font-size:13px;color:var(--muted);margin-left:8px}
 .pickable{position:relative;cursor:pointer}
-.pickable .pk{position:absolute;top:6px;right:6px;width:19px;height:19px;accent-color:var(--accent);cursor:pointer}
-.pickable .who:first-of-type{padding-right:22px}
+.pickable .pk{position:absolute;top:3px;right:3px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.s-both.pickable{align-items:center}
 .picked{outline:3px solid var(--accent);outline-offset:-3px}
-.s-lunch{background:transparent;border:1px dashed var(--muted);color:var(--muted);min-height:58px}
+.s-lunch{background:transparent;border:1px dashed var(--muted);color:var(--muted);min-height:24px;flex-direction:row;align-items:center;justify-content:center;gap:6px;padding:1px 4px}
+.s-lunch .pk{position:static;width:15px;height:15px}
+tr.lunchrow th.p small{display:none}
+@media(max-width:600px){.s-lunch span{display:none}.slot .rm{display:none}.slot{padding:2px 3px;font-size:11px}table.ov th.p{width:46px}table.ov th.p small{display:none}}
 #stuListBox textarea{width:100%;height:56px;margin:8px 0 6px}
 #stuListBox input{font-size:14px}
 /* 調查單紙張 */
