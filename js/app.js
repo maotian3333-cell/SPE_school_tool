@@ -433,14 +433,14 @@ function renderOverlay(){
       if(!slotExists(d,p)){h+='<td><div class="slot s-none">—</div></td>';return;}
       const free=all.every(x=>!cellOf(x.s,d,p));
       const rows=all.map(x=>{const c=cellOf(x.s,d,p);
-        return '<div class="who"><b>'+x.label+'</b><span>'+(c?esc(cleanSubject(c.subject))+' '+esc(room(c)):'<i class="star" aria-label="空堂">★</i>')+'</span></div>';}).join('');
+        return '<div class="who"><b>'+x.label+'</b><span>'+(c?esc(cleanSubject(c.subject))+'<em class="rm"> '+esc(room(c))+'</em>':'<i class="star" aria-label="空堂">★</i>')+'</span></div>';}).join('');
       const key=d+'-'+p,on=S.pick.has(key);
-      if(free)h+='<td><label class="slot s-both pickable'+(on?' picked':'')+'"><input type="checkbox" class="pk" data-pick="'+key+'"'+(on?' checked':'')+' aria-label="約星期'+DAYN[d]+pName(p)+'">'+rows+'</label></td>';
+      if(free)h+='<td><label class="slot s-both pickable'+(on?' picked':'')+'"><input type="checkbox" class="pk" data-pick="'+key+'"'+(on?' checked':'')+' aria-label="約星期'+DAYN[d]+pName(p)+'"><i class="star big" aria-hidden="true">★</i></label></td>';
       else h+='<td><div class="slot s-busy">'+rows+'</div></td>';});
     h+='</tr>';
     if(p===4&&pers.includes(5)){
-      h+='<tr><th class="p">午休<small>12:30–13:00</small></th>'+days.map(d=>{const key=d+'-L',on=S.pick.has(key);
-        return '<td><label class="slot s-lunch pickable'+(on?' picked':'')+'"><input type="checkbox" class="pk" data-pick="'+key+'"'+(on?' checked':'')+' aria-label="約星期'+DAYN[d]+'午休"><div class="who"><span>午休時段（可約）</span></div></label></td>';}).join('')+'</tr>';}
+      h+='<tr class="lunchrow"><th class="p">午休<small>12:30</small></th>'+days.map(d=>{const key=d+'-L',on=S.pick.has(key);
+        return '<td><label class="slot s-lunch pickable'+(on?' picked':'')+'"><input type="checkbox" class="pk" data-pick="'+key+'"'+(on?' checked':'')+' aria-label="約星期'+DAYN[d]+'午休"><span>可約</span></label></td>';}).join('')+'</tr>';}
   });
   h+='</tbody></table>';
   const sx=grid.scrollLeft;grid.innerHTML=h;grid.scrollLeft=sx;
@@ -458,7 +458,7 @@ function renderOverlay(){
   sd+=lines.length?'<ul>'+lines.map(l=>'<li>'+esc(l.txt)+'</li>').join('')+'</ul><button class="btn sm" id="btnCopy" type="button" style="margin-bottom:14px">複製時段清單</button>':'<p class="empty" style="padding:0 0 12px">大家沒有重疊的空堂。</p>';
   // 想提早去找導師：我有空、導師正在上課、下一節兩人都有空
   const hp=others.find(o=>o.role==='導師')||others[0],meet=[];
-  pers.forEach(p=>days.forEach(d=>{if(!slotExists(d,p)||!slotExists(d,p+1))return;
+  days.forEach(d=>pers.forEach(p=>{if(!slotExists(d,p)||!slotExists(d,p+1))return;
     const a=cellOf(A,d,p),b=cellOf(hp.s,d,p);
     if(!a&&b&&!cellOf(A,d,p+1)&&!cellOf(hp.s,d,p+1)){const tm=timeOf(p);meet.push({d:d,p:p,room:room(b),end:tm?tm[1]:''});}}));
   sd+='<h2>想提早找 '+esc(hp.s.name)+'</h2>';
